@@ -1,7 +1,6 @@
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 import { afterAll, beforeAll, beforeEach } from 'vitest';
-import { clearCache } from './src/model';
 
 let mongod: MongoMemoryServer;
 
@@ -14,7 +13,6 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   for (const model in mongoose.models) mongoose.deleteModel(model);
-  clearCache();
 });
 
 afterAll(async () => {

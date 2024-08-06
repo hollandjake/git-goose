@@ -8,7 +8,7 @@ describe('mongoose.plugin(git)', () => {
     const Model = getModel();
     const a = await Model.create({ some_field: 'some_value' });
     // @ts-ignore Allow access to protected property
-    expect(a.$git.model.collection.collectionName).toEqual('test_history');
+    expect(a.$git.model.collection.collectionName).toEqual('test.git');
   });
   test('creates correct collection with custom suffix', async () => {
     const Model = getModel(exampleSchema, { collectionSuffix: '-suffix' });

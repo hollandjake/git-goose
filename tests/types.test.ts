@@ -1,17 +1,17 @@
-import { AssertionError } from 'assert';
 import mongoose, { Schema, Types } from 'mongoose';
 import { describe, expect, test } from 'vitest';
+import { GitError } from '../lib/errors';
 import { git } from '../lib/plugin';
 import { Commit, committable, Diff } from '../lib/types';
 
 describe('committable', () => {
   test('truthy', () => {
     const schema = new Schema({}).plugin(git);
-    expect(() => committable(mongoose.model('test', schema))).not.toThrow(AssertionError);
+    expect(() => committable(mongoose.model('test', schema))).not.toThrow(GitError);
   });
   test('falsy', () => {
     const schema = new Schema({});
-    expect(() => committable(mongoose.model('test', schema))).toThrow(AssertionError);
+    expect(() => committable(mongoose.model('test', schema))).toThrow(GitError);
   });
 });
 

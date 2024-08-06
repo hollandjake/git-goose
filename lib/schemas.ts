@@ -1,4 +1,4 @@
-import { Model, Schema } from 'mongoose';
+import { type Model, Schema } from 'mongoose';
 import { type Operation } from 'rfc6902';
 import { type Commit } from './types';
 

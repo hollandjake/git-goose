@@ -31,7 +31,7 @@ export type GitOptions = {
   collectionName?: string;
   collectionSuffix?: string;
   snapshotWindow?: number;
-} & ModelOptions;
+} & Partial<ModelOptions>;
 
 export class Git<T extends object> {
   protected readonly model: DBCommitModel<T>;
@@ -41,11 +41,11 @@ export class Git<T extends object> {
 
   constructor(
     doc: CommittableDocument<T>,
-    { collectionName, collectionSuffix = '_history', snapshotWindow = 100, db = mongoose }: GitOptions = {}
+    { collectionName, collectionSuffix = '.git', snapshotWindow = 100, db }: GitOptions = {}
   ) {
     this.doc = doc;
     this.target = this.doc._id;
-    this.model = GitModel<T>(collectionName ?? doc.collection.name + collectionSuffix, { db });
+    this.model = GitModel<T>(collectionName ?? doc.collection.name + collectionSuffix, { db: db ?? doc.db });
     this.snapshotWindow = snapshotWindow;
   }
 

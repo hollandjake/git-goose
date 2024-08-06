@@ -1,6 +1,6 @@
-import assert from 'assert';
 import { Document, HydratedDocument, Model, Types } from 'mongoose';
 import { Operation } from 'rfc6902';
+import { GitError } from './errors';
 import { Git } from './git';
 
 /**
@@ -8,7 +8,10 @@ import { Git } from './git';
  * @param model
  */
 export function committable<M extends Model<object>>(model: M): CommittableModel<M> {
-  assert('$git' in model.schema.virtuals);
+  if (!('$git' in model.schema.virtuals))
+    throw new GitError(
+      "model is missing the '$git' virtual, did you run the plugin command before creating the model?"
+    );
   return model as unknown as CommittableModel<M>;
 }
 

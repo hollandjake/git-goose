@@ -1,9 +1,9 @@
-import { Error, Types } from 'mongoose';
+import mongoose, { Error, Types } from 'mongoose';
 import { describe, expect, test } from 'vitest';
 import { GitModel } from '../lib/model';
 
 describe('schema validation', () => {
-  const model = GitModel('test');
+  const model = GitModel('test', { db: mongoose.connection });
   test('happy path', async () => {
     await expect(
       model.create({

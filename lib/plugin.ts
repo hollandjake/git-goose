@@ -23,7 +23,7 @@ export function git<RawDocType extends object>(schema: Schema<RawDocType>, optio
   /**
    * Run before doing Document.save()
    */
-  schema.pre('save', async function (this: CommittableDocument<RawDocType>) {
+  schema.post('save', async function (this: CommittableDocument<RawDocType>) {
     // @ts-ignore Allow access to protected property
     await this.$git.commit();
   });
