@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist",
+    "module": "commonjs",
+    "target": "ES5",
+    "lib": [],
+    "allowSyntheticDefaultImports": true,
+    "declarationMap": true,
+    "skipLibCheck": true,
+  },
+  "extends": "./node_modules/gts/tsconfig-google.json",
+  "include": ["./src"],
+}
