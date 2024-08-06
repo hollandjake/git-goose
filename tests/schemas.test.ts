@@ -1,6 +1,6 @@
 import { Error, Types } from 'mongoose';
 import { describe, expect, test } from 'vitest';
-import { GitModel } from '../src/model';
+import { GitModel } from '../lib/model';
 
 describe('schema validation', () => {
   const model = GitModel('test');

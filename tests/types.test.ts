@@ -1,7 +1,8 @@
 import { AssertionError } from 'assert';
 import mongoose, { Schema, Types } from 'mongoose';
 import { describe, expect, test } from 'vitest';
-import { Commit, committable, Diff, git } from '../src';
+import { git } from '../lib/plugin';
+import { Commit, committable, Diff } from '../lib/types';
 
 describe('committable', () => {
   test('truthy', () => {

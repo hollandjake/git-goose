@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { GitModel } from '../src/model';
+import { GitModel } from '../lib/model';
 
 test('model caching', () => {
   const modelA = GitModel('test');

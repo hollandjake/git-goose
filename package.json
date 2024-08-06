@@ -2,12 +2,25 @@
   "name": "git-goose",
   "version": "0.0.1",
   "description": "a mongoose plugin that enables git like change tracking",
+  "license": "MIT",
   "author": "Jake Holland <contact@hollandjake.com>",
+  "homepage": "https://github.com/hollandjake/git-goose",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/hollandjake/git-goose.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hollandjake/git-goose/issues"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "files": [
     "dist"
   ],
+  "directories": {
+    "lib": "./lib",
+    "test": "./tests"
+  },
   "scripts": {
     "build": "tsc",
     "ci:publish": "pnpm publish -r",
@@ -43,5 +56,6 @@
     "history",
     "mongoose",
     "typescript"
-  ]
+  ],
+  "readme": "./README.md"
 }

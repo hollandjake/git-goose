@@ -2,7 +2,7 @@
 
 import { Types } from 'mongoose';
 import { describe, expect, test, vi } from 'vitest';
-import { GitError } from '../src/errors';
+import { GitError } from '../lib/errors';
 import { exampleSchema, getModel } from './utils';
 
 const Model = getModel();

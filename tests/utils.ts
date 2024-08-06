@@ -1,5 +1,7 @@
 import mongoose, { Schema } from 'mongoose';
-import { committable, git, GitOptions } from '../src';
+import { GitOptions } from '../src/git';
+import { git } from '../src/plugin';
+import { committable } from '../src/types';
 
 export const exampleSchema = new Schema(
   {
