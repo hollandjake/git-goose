@@ -5,7 +5,7 @@ import { type Commit } from './types';
 export interface DBCommit<Snapshot extends object = object, Target = never> extends Commit {
   readonly target: Target;
   readonly snapshot: Snapshot;
-  readonly isRoot: boolean;
+  readonly initialCommit: boolean;
 }
 
 export type DBCommitModel<T extends object = object> = Model<DBCommit<T>>;
@@ -32,7 +32,7 @@ export const CommitSchema = new Schema<DBCommit>(
       immutable: true,
       validate: [(value: Operation[]) => !!value.length, 'No Empty'],
     },
-    isRoot: { type: Boolean, immutable: true },
+    initialCommit: { type: Boolean, immutable: true },
     // Snapshot represents the state of the object AFTER this commit has been applied
     snapshot: { type: Schema.Types.Mixed, immutable: true, select: false },
   },

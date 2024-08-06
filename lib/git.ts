@@ -123,7 +123,7 @@ export class Git<T extends object> {
     const curr = this.objectifyDoc();
     const head: object = this.doc.$locals[HEAD] ?? {};
 
-    const isRoot = !this.doc.$locals[HEAD];
+    const initialCommit = !this.doc.$locals[HEAD];
 
     const patches = createPatch(head, curr);
     if (patches.length) {
@@ -132,7 +132,7 @@ export class Git<T extends object> {
         // Generate snapshot
         snapshot = curr;
       }
-      await this.model.create({ target: this.target, patches, snapshot, isRoot });
+      await this.model.create({ target: this.target, patches, snapshot, initialCommit });
     }
     this.doc.$locals[HEAD] = curr;
   }
@@ -170,7 +170,7 @@ export class Git<T extends object> {
         )
         .orFail(() => new GitError(`No commit found with date '${commit}'`));
 
-      if (matchedByDate.isRoot && matchedByDate.date > commit) {
+      if (matchedByDate.initialCommit && matchedByDate.date > commit) {
         throw new GitError(`No commit found with date '${commit}'`);
       }
       return matchedByDate;
