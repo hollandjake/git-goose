@@ -1,13 +1,14 @@
 {
   "compilerOptions": {
-    "outDir": "./dist",
-    "module": "commonjs",
-    "target": "ES5",
-    "lib": [],
+    "outDir": "dist",
+    "moduleResolution": "Node",
+    "resolveJsonModule": true,
+    "module": "ES6",
+    "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "declarationMap": true,
     "skipLibCheck": true,
   },
   "extends": "./node_modules/gts/tsconfig-google.json",
-  "include": ["index.ts"],
+  "include": ["index.ts"]
 }

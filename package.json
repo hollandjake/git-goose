@@ -13,16 +13,17 @@
     "url": "https://github.com/hollandjake/git-goose/issues"
   },
   "type": "module",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
   "files": [
     "dist"
   ],
   "directories": {
-    "lib": "./lib",
+    "lib": "./src",
     "test": "./tests"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "rollup -c",
     "ci:publish": "pnpm publish -r",
     "clean": "gts clean",
     "clean:build": "pnpm clean && pnpm build",
@@ -33,19 +34,24 @@
   },
   "types": "./dist/index.d.ts",
   "dependencies": {
-    "mongoose": ">=7.6.2",
+    "mongoose": ">=8.0.0",
     "rfc6902": "^5.1.1"
   },
   "devDependencies": {
     "@changesets/changelog-github": "^0.5.0",
     "@changesets/cli": "^2.27.7",
     "@changesets/types": "^6.0.0",
+    "@mnrendra/rollup-plugin-mixexport": "^1.1.0",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-typescript": "^11.1.6",
     "@types/node": "^22.1.0",
     "@vitest/coverage-istanbul": "^2.0.5",
     "eslint": "^8.57.0",
     "gts": "^5.3.1",
     "mongodb-memory-server": "^10.0.0",
     "prettier-plugin-organize-imports": "^4.0.0",
+    "rollup": "^4.20.0",
+    "rollup-plugin-esbuild": "^6.1.1",
     "typescript": "^5.5.4",
     "vite-tsconfig-paths": "^4.3.2",
     "vitest": "^2.0.5"
