@@ -7,5 +7,5 @@
       "repo": "hollandjake/git-goose"
     }
   ],
-  "commit": true
+  "commit": "./commit.cjs"
 }
