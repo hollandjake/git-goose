@@ -8,6 +8,8 @@ export default defineConfig({
       provider: 'istanbul',
     },
     setupFiles: ['./vitest.setup.ts'],
+    minWorkers: (process.env.CI === 'true' ? 1 : undefined),
+    maxWorkers: (process.env.CI === 'true' ? 1 : undefined),
   },
   define: {
     'import.meta.vitest': 'undefined',
