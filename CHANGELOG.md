@@ -1,5 +1,11 @@
 # git-goose
 
+## 0.1.0
+
+### Minor Changes
+
+- [`9b0a934`](https://github.com/hollandjake/git-goose/commit/9b0a9349bc2222081c6abd08ebc1cc4bf7aba30d) Thanks [@hollandjake](https://github.com/hollandjake)! - Add support for CommonJS and ESM
+
 ## 0.0.1
 
 ### Patch Changes
