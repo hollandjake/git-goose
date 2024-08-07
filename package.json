@@ -24,6 +24,7 @@
   },
   "scripts": {
     "build": "rollup -c",
+    "ci:publish": "pnpm publish -r",
     "clean": "gts clean",
     "clean:build": "pnpm clean && pnpm build",
     "lint": "gts lint",
