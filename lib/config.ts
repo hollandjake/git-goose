@@ -1,6 +1,6 @@
 import mongoose, { type Connection } from 'mongoose';
-import rfc6902 from 'rfc6902';
 import { GitError } from './errors';
+import { rfc6902 } from './patchers';
 import { Patcher, PatcherName, PatchType } from './types';
 
 export interface ModelOptions {
