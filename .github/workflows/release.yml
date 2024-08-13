@@ -10,10 +10,11 @@ env:
   MONGOMS_PREFER_GLOBAL_PATH: true
 jobs:
   release:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+
     name: Release
     runs-on: ubuntu-latest
     permissions:
-      packages: write # to be able to publish a GitHub release
       contents: write # to be able to publish a GitHub release
       issues: write # to be able to comment on released issues
       pull-requests: write # to be able to comment on released pull requests
@@ -49,17 +50,20 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Prep commit message
-        run: |
-          echo "NEW_VERSION=$(pnpm changeset status --output=release.json && jq -r '.releases[0].newVersion' release.json && rm release.json)" >> "$GITHUB_ENV"
+      - name: Verify the integrity of provenance attestations and registry signatures for installed dependencies
+        run: pnpm audit signatures
 
-      - name: Create Release Pull Request or Publish
-        id: changesets
-        uses: changesets/action@v1
+      - name: Release
+        uses: cycjimmy/semantic-release-action@v4
         with:
-          title: "Release v${{env.NEW_VERSION}}"
-          commit: "chore(release): v${{env.NEW_VERSION}}"
-          publish: pnpm ci:publish
+          branches: |
+            [
+              '+([0-9])?(.{+([0-9]),x}).x',
+              'main'
+            ]
+          extra_plugins: |
+            @semantic-release/git
+            @semantic-release/changelog
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
