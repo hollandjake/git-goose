@@ -1,6 +1,6 @@
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
-import { afterAll, beforeAll, beforeEach } from 'vitest';
+import { afterAll, afterEach, beforeAll } from 'vitest';
 
 let mongod: MongoMemoryServer;
 
@@ -11,12 +11,11 @@ beforeAll(async () => {
   await mongoose.connect(uri);
 });
 
-beforeEach(async () => {
+afterEach(async () => {
   for (const model in mongoose.models) mongoose.deleteModel(model);
 });
 
 afterAll(async () => {
-  await mongoose.connection.dropDatabase();
-  await mongoose.connection.close();
+  await mongoose.disconnect();
   await mongod.stop();
 });

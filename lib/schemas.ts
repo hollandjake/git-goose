@@ -1,40 +1,39 @@
-import { type Model, Schema } from 'mongoose';
-import { type Operation } from 'rfc6902';
-import { type Commit } from './types';
+import { HydratedDocument, type Model, Require_id, Schema } from 'mongoose';
+import { getPatcher } from './config';
+import { Commit, Nullable, Patch, PatcherName, RefId } from './types';
 
-export interface DBCommit<Snapshot extends object = object, Target = never> extends Commit {
-  readonly target: Target;
-  readonly snapshot: Snapshot;
-  readonly initialCommit: boolean;
-}
-
-export type DBCommitModel<T extends object = object> = Model<DBCommit<T>>;
-
-const ops = ['add', 'remove', 'replace', 'move', 'copy', 'test', '_get'] as const;
-const operationSchema = new Schema<Operation>(
+const PatchSchema = new Schema<Patch>(
   {
-    // json-patch related fields
-    path: { type: String, required: true },
-    op: { type: String, enum: ops, required: true },
-    value: { type: Schema.Types.Mixed },
-    from: { type: String },
+    type: { type: String, required: true },
+    ops: { type: Schema.Types.Mixed, required: true },
   },
-  { _id: false, versionKey: false }
+  {
+    methods: {
+      apply<T>(this: Patch, target: Nullable<T>) {
+        return getPatcher(this.type).apply(target, this.ops);
+      },
+    },
+  }
 );
 
-export const CommitSchema = new Schema<DBCommit>(
+export interface DBCommit<TargetDocType = unknown, PatchName extends PatcherName = PatcherName>
+  extends Commit<PatchName> {
+  readonly refId: RefId;
+  readonly snapshot: Nullable<Require_id<TargetDocType>>;
+}
+
+export const DBCommitSchema = new Schema<DBCommit>(
   {
     date: { type: Date, default: () => new Date(), immutable: true },
-    target: { type: Schema.Types.Mixed, required: true, immutable: true, select: false },
-    patches: {
-      type: [operationSchema],
-      required: true,
-      immutable: true,
-      validate: [(value: Operation[]) => !!value.length, 'No Empty'],
-    },
-    initialCommit: { type: Boolean, immutable: true },
+    refId: { type: Schema.Types.Mixed, required: true, immutable: true, select: false },
+    patch: { type: PatchSchema, required: true },
     // Snapshot represents the state of the object AFTER this commit has been applied
     snapshot: { type: Schema.Types.Mixed, immutable: true, select: false },
   },
-  { versionKey: false }
-).index({ target: 1, date: 1 }, { unique: true });
+  { versionKey: false, toObject: { virtuals: ['id'] } }
+).index({ refId: 1, date: 1 }, { unique: true });
+
+export type DBCommitModel<TargetDocType = unknown> = Model<DBCommit<TargetDocType>>;
+export type DBCommitDocument<TargetDocType = unknown, PatchName extends PatcherName = PatcherName> = HydratedDocument<
+  DBCommit<TargetDocType, PatchName>
+>;

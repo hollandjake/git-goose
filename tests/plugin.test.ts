@@ -1,6 +1,9 @@
 /* eslint @typescript-eslint/ban-ts-comment: 0 */
 
+import mongoose, { Schema } from 'mongoose';
 import { describe, expect, test } from 'vitest';
+import { GitError } from '../lib/errors';
+import { committable, git } from '../lib/plugin';
 import { exampleSchema, getModel } from './utils';
 
 describe('mongoose.plugin(git)', () => {
@@ -59,5 +62,33 @@ describe('save', () => {
       await obj.save();
       await expect(obj.$git.log()).resolves.toHaveLength(2);
     });
+    test('update nested field', async () => {
+      const schema = new Schema({
+        some_field: { type: String },
+        some_other_field: { type: new Schema({ some_more_field: String, even_more_field: String }), required: true },
+      });
+      const model = getModel(schema);
+      // Create
+      const obj = await model.create({
+        some_field: 'some_value',
+        some_other_field: { some_more_field: 'x', even_more_field: 'y' },
+      });
+      await expect(obj.$git.log()).resolves.toHaveLength(1);
+      // Update
+      obj.some_field = 'some_other_value';
+      obj.some_other_field.some_more_field = 'some_other_value';
+      await obj.save();
+      await expect(obj.$git.log()).resolves.toHaveLength(2);
+    });
+  });
+});
+
+describe('committable', () => {
+  test('validate model is actually ours', async () => {
+    const postSchema = exampleSchema.clone();
+    expect(() => committable(mongoose.model('invalid', postSchema))).toThrow(GitError);
+
+    const postSchemaWithPlugin = exampleSchema.clone().plugin(git);
+    expect(() => committable(mongoose.model('invalid', postSchemaWithPlugin))).not.toThrow(GitError);
   });
 });
