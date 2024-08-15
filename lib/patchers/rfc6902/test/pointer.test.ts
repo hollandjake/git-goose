@@ -5,57 +5,57 @@ import { expect, test } from 'vitest';
 import { Pointer } from '../pointer';
 import { clone } from './_index';
 
-test('Pointer.fromJSON empty', () => {
+test.concurrent('Pointer.fromJSON empty', () => {
   expect(() => Pointer.fromJSON('')).not.toThrow();
 });
-test('Pointer.fromJSON slash', () => {
+test.concurrent('Pointer.fromJSON slash', () => {
   expect(() => Pointer.fromJSON('/')).not.toThrow();
 });
-test('Pointer.fromJSON invalid', () => {
+test.concurrent('Pointer.fromJSON invalid', () => {
   expect(() => Pointer.fromJSON('a'), 'thrown error should have descriptive message').toThrow(/Invalid JSON Pointer/);
 });
 
 const example = { bool: false, arr: [10, 20, 30], obj: { a: 'A', b: 'B' } };
 
-test('Pointer#get bool', () => {
+test.concurrent('Pointer#get bool', () => {
   expect(Pointer.fromJSON('/bool').get(example), 'should get bool value').toEqual(false);
 });
-test('Pointer#get array', () => {
+test.concurrent('Pointer#get array', () => {
   expect(Pointer.fromJSON('/arr/1').get(example), 'should get array value').toEqual(20);
 });
-test('Pointer#get object', () => {
+test.concurrent('Pointer#get object', () => {
   expect(Pointer.fromJSON('/obj/b').get(example), 'should get object value').toEqual('B');
 });
-test('Pointer#push', () => {
+test.concurrent('Pointer#push', () => {
   const pointer = Pointer.fromJSON('/obj');
   pointer.push('a');
   expect(pointer.toString(), 'should add token').toBe('/obj/a');
 });
-test('Pointer#get∘push', () => {
+test.concurrent('Pointer#get∘push', () => {
   const pointer = Pointer.fromJSON('/obj');
   pointer.push('a');
   expect(pointer.get(example), 'should get object value after adding token').toEqual('A');
 });
 
-test('Pointer#set bool', () => {
+test.concurrent('Pointer#set bool', () => {
   const input = { bool: true };
   Pointer.fromJSON('/bool').set(input, false);
   expect(input.bool, 'should set bool value in-place').toEqual(false);
 });
 
-test('Pointer#set array middle', () => {
+test.concurrent('Pointer#set array middle', () => {
   const input: any = { arr: ['10', '20', '30'] };
   Pointer.fromJSON('/arr/1').set(input, 0);
   expect(input.arr[1], 'should set array value in-place').toEqual(0);
 });
 
-test('Pointer#set array beyond', () => {
+test.concurrent('Pointer#set array beyond', () => {
   const input: any = { arr: ['10', '20', '30'] };
   Pointer.fromJSON('/arr/3').set(input, 40);
   expect(input.arr[3], 'should set array value in-place').toEqual(40);
 });
 
-test('Pointer#set top-level', () => {
+test.concurrent('Pointer#set top-level', () => {
   const input: any = { obj: { a: 'A', b: 'B' } };
   const original = clone(input);
   Pointer.fromJSON('').set(input, { other: { c: 'C' } });
@@ -71,25 +71,25 @@ test('Pointer#set top-level', () => {
   // See Issue #92 for more discussion of this limitation / behavior.
 });
 
-test('Pointer#set object existing', () => {
+test.concurrent('Pointer#set object existing', () => {
   const input = { obj: { a: 'A', b: 'B' } };
   Pointer.fromJSON('/obj/b').set(input, 'BBB');
   expect(input.obj.b, 'should set object value in-place').toEqual('BBB');
 });
 
-test('Pointer#set object new', () => {
+test.concurrent('Pointer#set object new', () => {
   const input: any = { obj: { a: 'A', b: 'B' } };
   Pointer.fromJSON('/obj/c').set(input, 'C');
   expect(input.obj.c, 'should add object value in-place').toEqual('C');
 });
 
-test('Pointer#set deep object new', () => {
+test.concurrent('Pointer#set deep object new', () => {
   const input: any = { obj: { subobj: { a: 'A', b: 'B' } } };
   Pointer.fromJSON('/obj/subobj/c').set(input, 'C');
   expect(input.obj.subobj.c, 'should add deep object value in-place').toEqual('C');
 });
 
-test('Pointer#set not found', () => {
+test.concurrent('Pointer#set not found', () => {
   const input: any = { obj: { a: 'A', b: 'B' } };
   const original = clone(input);
   Pointer.fromJSON('/notfound/c').set(input, 'C');
