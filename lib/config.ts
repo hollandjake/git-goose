@@ -43,7 +43,10 @@ export const Patchers = {
       if (!patch.length) return null;
       return patch;
     },
-    apply: rfc6902.applyPatch,
+    apply(target, patch) {
+      if (!patch) return target;
+      return rfc6902.applyPatch(target, patch);
+    },
   },
 } satisfies Record<string, Patcher>;
 
