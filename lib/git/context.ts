@@ -52,7 +52,7 @@ export abstract class GitWithContext<TargetDocType, TPatcherName extends Patcher
 
     if (commitB === undefined) {
       const targetCommit = await this.rebuildCommitFromRefId(this.refId, commitA!);
-      return this.createPatch(targetCommit, await this.getActiveDoc());
+      return this.createPatch(targetCommit, await this.getActiveDoc(), true);
     }
 
     return this.diffFromRefId(this.refId, commitA!, commitB);
@@ -83,7 +83,7 @@ export abstract class GitWithContext<TargetDocType, TPatcherName extends Patcher
    * Returns the difference between the active document and the current HEAD commit
    */
   public async status(): Promise<Patch<TPatcherName>> {
-    return this.createPatch(await this.getHeadDoc(), await this.getActiveDoc());
+    return this.createPatch(await this.getHeadDoc(), await this.getActiveDoc(), true);
   }
 
   protected async commit(): Promise<void> {

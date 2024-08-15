@@ -1,4 +1,5 @@
 import mongoose, {
+  Document,
   type FilterQuery,
   type HydratedDocument,
   Model,
@@ -11,16 +12,7 @@ import { ContextualGitConfig, getPatcher, GitConfig, GitGlobalConfig, RequiredCo
 import { GitError } from '../errors';
 import { GitModel } from '../model';
 import { DBCommitDocument, DBCommitModel } from '../schemas';
-import {
-  Commit,
-  CommitRef,
-  CommittableDocument,
-  GlobalPatcherName,
-  Nullable,
-  Patch,
-  PatcherName,
-  RefId,
-} from '../types';
+import { Commit, CommitRef, GlobalPatcherName, Nullable, Patch, PatcherName, RefId } from '../types';
 
 /**
  * Base Git manager for interacting and manipulating commits and the commit history
@@ -142,9 +134,36 @@ export abstract class GitBase<TargetDocType, TPatcherName extends PatcherName = 
   protected async createPatch(
     committed: Nullable<TargetDocType>,
     active: Nullable<TargetDocType>
-  ): Promise<Patch<TPatcherName>> {
+  ): Promise<Nullable<Patch<TPatcherName>>>;
+
+  /**
+   * Create a patch by invoking the configured patcher
+   *
+   * @param committed - The documents previous state
+   * @param active - The documents new state
+   * @param allowEmpty - Allow empty patches to be returned
+   */
+  protected async createPatch(
+    committed: Nullable<TargetDocType>,
+    active: Nullable<TargetDocType>,
+    allowEmpty: true
+  ): Promise<Patch<TPatcherName>>;
+
+  /**
+   * Create a patch by invoking the configured patcher
+   *
+   * @param committed - The documents previous state
+   * @param active - The documents new state
+   * @param allowEmpty - Allow empty patches to be returned
+   */
+  protected async createPatch(
+    committed: Nullable<TargetDocType>,
+    active: Nullable<TargetDocType>,
+    allowEmpty?: true
+  ): Promise<Nullable<Patch<TPatcherName>>> {
     const type = this.conf('patcher') as TPatcherName;
     const ops = await getPatcher(type).create(committed, active);
+    if (!allowEmpty && ops === null) return null;
     return { type, ops } as never;
   }
 
@@ -161,7 +180,7 @@ export abstract class GitBase<TargetDocType, TPatcherName extends PatcherName = 
       this.rebuildCommitFromRefId(refId, commitB),
     ]);
 
-    return this.createPatch(targetA, targetB);
+    return this.createPatch(targetA, targetB, true);
   }
 
   /**
@@ -170,7 +189,10 @@ export abstract class GitBase<TargetDocType, TPatcherName extends PatcherName = 
    * @param refId - The reference object id
    * @param commit - A commit identifier
    */
-  protected async findCommitFromRefId(refId: RefId, commit: CommitRef): Promise<DBCommitDocument<TargetDocType>> {
+  protected async findCommitFromRefId(
+    refId: RefId,
+    commit: CommitRef
+  ): Promise<Nullable<DBCommitDocument<TargetDocType>>> {
     // Convert commit into relevant type
     if (typeof commit === 'string') {
       if (/^(HEAD|@)/.test(commit)) {
@@ -232,8 +254,8 @@ export abstract class GitBase<TargetDocType, TPatcherName extends PatcherName = 
    *
    * @param doc - The document to convert
    */
-  protected objectify(doc: CommittableDocument<TargetDocType>): Require_id<TargetDocType> {
-    return doc.toObject({ virtuals: false, depopulate: true });
+  protected objectify(doc: Nullable<Document<unknown, {}, TargetDocType>>): Nullable<Require_id<TargetDocType>> {
+    return doc?.toObject({ virtuals: false, depopulate: true }) ?? null;
   }
 
   /**
@@ -247,6 +269,8 @@ export abstract class GitBase<TargetDocType, TPatcherName extends PatcherName = 
     commit: CommitRef
   ): Promise<Nullable<Require_id<TargetDocType>>> {
     const targetCommit = await this.findCommitFromRefId(refId, commit);
+
+    if (!targetCommit) return null;
 
     // Find the most recent snapshot commit before the target commit
     const snapshotCommit = await this.model.findOne(
@@ -291,10 +315,15 @@ export abstract class GitBase<TargetDocType, TPatcherName extends PatcherName = 
    * @param refId - The reference object id
    * @param date - The date in question
    */
-  private async findCommitByDateFromRefId(refId: RefId, date: Date): Promise<DBCommitDocument<TargetDocType>> {
-    return this.model
-      .findOne<DBCommitDocument<TargetDocType>>({ refId, date: { $lte: date } }, {}, { sort: { _id: -1 } })
-      .orFail(() => new GitError(`No commit found with date '${date}'`));
+  private async findCommitByDateFromRefId(
+    refId: RefId,
+    date: Date
+  ): Promise<Nullable<DBCommitDocument<TargetDocType>>> {
+    return this.model.findOne<DBCommitDocument<TargetDocType>>(
+      { refId, date: { $lte: date } },
+      {},
+      { sort: { _id: -1 } }
+    );
   }
 
   /**
@@ -306,10 +335,8 @@ export abstract class GitBase<TargetDocType, TPatcherName extends PatcherName = 
   private async findCommitByIdFromRefId(
     refId: RefId,
     commit: Types.ObjectId
-  ): Promise<DBCommitDocument<TargetDocType>> {
-    return this.model
-      .findOne<DBCommitDocument<TargetDocType>>({ refId, _id: commit })
-      .orFail(() => new GitError(`No commit found with id '${commit}'`));
+  ): Promise<Nullable<DBCommitDocument<TargetDocType>>> {
+    return this.model.findOne<DBCommitDocument<TargetDocType>>({ refId, _id: commit });
   }
 
   /**
@@ -321,9 +348,14 @@ export abstract class GitBase<TargetDocType, TPatcherName extends PatcherName = 
    * @param refId - The reference object id
    * @param offset - The number of commits to offset by, 0 being the HEAD commit
    */
-  private async findCommitByOffsetFromRefId(refId: RefId, offset: number): Promise<DBCommitDocument<TargetDocType>> {
-    return this.model
-      .findOne<DBCommitDocument<TargetDocType>>({ refId }, {}, { sort: { _id: -1 }, skip: Math.abs(offset) })
-      .orFail(() => new GitError(`No commit found with offset ${offset}`));
+  private async findCommitByOffsetFromRefId(
+    refId: RefId,
+    offset: number
+  ): Promise<Nullable<DBCommitDocument<TargetDocType>>> {
+    return this.model.findOne<DBCommitDocument<TargetDocType>>(
+      { refId },
+      {},
+      { sort: { _id: -1 }, skip: Math.abs(offset) }
+    );
   }
 }
