@@ -218,7 +218,7 @@ export abstract class GitBase<TargetDocType, TPatcherName extends PatcherName = 
   ): Promise<Commit[]> {
     // Fetch commits for the target, applying and extra options
     const commits = await this.model.find({ ...filter, refId }, projection, {
-      sort: { date: -1 },
+      sort: { _id: -1 },
       limit: 10,
       ...options,
     });
@@ -252,7 +252,7 @@ export abstract class GitBase<TargetDocType, TPatcherName extends PatcherName = 
     const snapshotCommit = await this.model.findOne(
       { refId, _id: { $lte: targetCommit._id }, snapshot: { $exists: true } },
       { _id: true, snapshot: true },
-      { sort: { date: -1 } }
+      { sort: { _id: -1 } }
     );
 
     // Construct the commit
