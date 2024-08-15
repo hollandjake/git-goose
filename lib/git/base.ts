@@ -77,7 +77,7 @@ export abstract class GitBase<TargetDocType, TPatcherName extends PatcherName = 
     commit: CommitRef
   ): Promise<Nullable<HydratedDocument<TargetDocType>>> {
     const targetCommit = await this.rebuildCommitFromRefId(refId, commit);
-    if (!targetCommit) return targetCommit as null;
+    if (!targetCommit) return null;
 
     return this._referenceModel.hydrate(targetCommit);
   }
@@ -87,7 +87,7 @@ export abstract class GitBase<TargetDocType, TPatcherName extends PatcherName = 
    *
    * If no changes are detected it will skip creation
    */
-  protected abstract commit(...args: unknown[]): Promise<void>;
+  protected abstract commit(): Promise<void>;
 
   /**
    * Record changes to the document in the commit store
@@ -141,12 +141,12 @@ export abstract class GitBase<TargetDocType, TPatcherName extends PatcherName = 
    *
    * @param committed - The documents previous state
    * @param active - The documents new state
-   * @param allowEmpty - Allow empty patches to be returned
+   * @param allowNoop - Allow null patches to be returned
    */
   protected async createPatch(
     committed: Nullable<TargetDocType>,
     active: Nullable<TargetDocType>,
-    allowEmpty: true
+    allowNoop: true
   ): Promise<Patch<TPatcherName>>;
 
   /**
@@ -154,16 +154,16 @@ export abstract class GitBase<TargetDocType, TPatcherName extends PatcherName = 
    *
    * @param committed - The documents previous state
    * @param active - The documents new state
-   * @param allowEmpty - Allow empty patches to be returned
+   * @param allowNoop - Allow null patches to be returned
    */
   protected async createPatch(
     committed: Nullable<TargetDocType>,
     active: Nullable<TargetDocType>,
-    allowEmpty?: true
+    allowNoop?: true
   ): Promise<Nullable<Patch<TPatcherName>>> {
     const type = this.conf('patcher') as TPatcherName;
     const ops = await getPatcher(type).create(committed, active);
-    if (!allowEmpty && ops === null) return null;
+    if (!allowNoop && ops === null) return null;
     return { type, ops } as never;
   }
 
@@ -263,14 +263,19 @@ export abstract class GitBase<TargetDocType, TPatcherName extends PatcherName = 
    *
    * @param refId - The reference object id
    * @param commit - A commit identifier
+   * @param nullOnMissingCommit - Return null if the commit doesn't exist
    */
   protected async rebuildCommitFromRefId(
     refId: RefId,
-    commit: CommitRef
+    commit: CommitRef,
+    nullOnMissingCommit?: true
   ): Promise<Nullable<Require_id<TargetDocType>>> {
     const targetCommit = await this.findCommitFromRefId(refId, commit);
 
-    if (!targetCommit) return null;
+    if (!targetCommit) {
+      if (nullOnMissingCommit) return null;
+      throw new GitError(`No commit found for ref '${commit}'`);
+    }
 
     // Find the most recent snapshot commit before the target commit
     const snapshotCommit = await this.model.findOne(

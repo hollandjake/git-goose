@@ -1,4 +1,3 @@
-/* eslint @typescript-eslint/ban-ts-comment: 0 */
 /* eslint @typescript-eslint/no-explicit-any: 0 */
 
 import { Types } from 'mongoose';
@@ -145,7 +144,7 @@ describe('diff', () => {
     // Global Git it not aware of uncommitted changes, it effectively acts as the remote server
     await expect(globalGit.withRefId(obj._id).diff()).resolves.toEqual({
       type: 'json-patch',
-      ops: [],
+      ops: null,
     });
   });
   describe('check previous commit', () => {
@@ -250,15 +249,12 @@ describe('status', () => {
       ],
     });
     // At this point the doc has not been committed to the db so there is no commits available
-    await expect(globalGit.withRefId(obj._id).status()).rejects.toThrow();
+    await expect(globalGit.withRefId(obj._id).status()).resolves.toEqual({ type: 'json-patch', ops: null });
   });
   test('after save', async () => {
     const obj = await Model.create({ some_field: 'some_value' });
-    await expect(obj.$git.status()).resolves.toEqual({
-      type: 'json-patch',
-      ops: [],
-    });
-    await expect(globalGit.withRefId(obj._id).status()).resolves.toEqual({ type: 'json-patch', ops: [] });
+    await expect(obj.$git.status()).resolves.toEqual({ type: 'json-patch', ops: null });
+    await expect(globalGit.withRefId(obj._id).status()).resolves.toEqual({ type: 'json-patch', ops: null });
   });
   test('before update', async () => {
     const obj = await Model.create({ some_field: 'some_value' });
@@ -267,14 +263,6 @@ describe('status', () => {
       type: 'json-patch',
       ops: [{ path: '/some_field', op: 'replace', value: 'some_other_value' }],
     });
-    await expect(globalGit.withRefId(obj._id).status()).resolves.toEqual({ type: 'json-patch', ops: [] });
-  });
-});
-
-describe('commit', () => {
-  test('throws an error when not a document', async () => {
-    const obj = await Model.create({ some_field: 'some_value' });
-    // @ts-ignore Allow access to protected property
-    await expect(Model.$git().withRefId(obj._id).commit()).rejects.toThrow(GitError);
+    await expect(globalGit.withRefId(obj._id).status()).resolves.toEqual({ type: 'json-patch', ops: null });
   });
 });

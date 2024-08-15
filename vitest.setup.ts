@@ -11,7 +11,10 @@ beforeAll(async () => {
   await mongoose.connect(uri);
 });
 
-afterEach(() => mongoose.connection.dropDatabase());
+afterEach(async () => {
+  for (const model in mongoose.models) mongoose.deleteModel(model);
+  await mongoose.connection.dropDatabase();
+});
 
 afterAll(async () => {
   await mongoose.disconnect();
