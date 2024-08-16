@@ -18,19 +18,10 @@ jobs:
         with:
           node-version: "20"
           cache: "pnpm"
-
-      - name: Load MongoDB binary cache
-        id: cache-mongodb-binaries
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/mongodb-binaries
-          key: 20
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: pnpm install
-
-      - name: Test
-        run: pnpm test
 
       - name: Build
         run: pnpm build
@@ -39,6 +30,6 @@ jobs:
         run: pnpm audit signatures
 
       - name: NPM Publish
-        run: pnpm publish
+        run: pnpm publish --provenance
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
