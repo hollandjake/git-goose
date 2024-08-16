@@ -37,7 +37,7 @@ describe('JSON Pointer - rfc-examples', () => {
     { path: '/m~0n', expected: 8 },
   ];
 
-  test.for(pointers)('%s', pointer => {
+  test.concurrent.for(pointers)('%s', pointer => {
     const actual = Pointer.fromJSON(pointer.path).evaluate(obj).value;
     expect(actual, `pointer "${pointer.path}" should evaluate to expected output`).toEqual(pointer.expected);
   });
@@ -76,7 +76,7 @@ describe('JSON Pointer - package example', () => {
     { path: '/github/stars/0/repo', expected: 'userland' },
   ];
 
-  test.for(pointers)('%s', pointer => {
+  test.concurrent.for(pointers)('%s', pointer => {
     const actual = Pointer.fromJSON(pointer.path).evaluate(obj).value;
     expect(actual, `pointer "${pointer.path}" should evaluate to expected output`).toEqual(pointer.expected);
   });
@@ -86,7 +86,7 @@ describe('Specification format', () => {
   describe('patch', () => {
     // take the input, apply the patch, and check the actual result against the
     // expected output
-    test.for(spec_data.map(s => [s.name, s] as const))('%s', ([, spec]) => {
+    test.concurrent.for(spec_data.map(s => [s.name, s] as const))('%s', ([, spec]) => {
       // patch operations are applied to object in-place
       if (spec.throws) {
         expect(() => applyPatch(clone(spec.input), spec.patch)).toThrow(spec.throws);
@@ -100,7 +100,7 @@ describe('Specification format', () => {
   });
 
   describe('diff', () => {
-    test.for(spec_data.filter(spec => spec.diffable).map(s => [s.name, s] as const))('%s', ([, spec]) => {
+    test.concurrent.for(spec_data.filter(spec => spec.diffable).map(s => [s.name, s] as const))('%s', ([, spec]) => {
       // we read this separately because patch is destructive and it's easier just to start with a blank slate
       // ignore spec items that are marked as not diffable
       // perform diff (create patch = list of operations) and check result against non-test patches in spec

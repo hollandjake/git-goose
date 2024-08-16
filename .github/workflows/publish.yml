@@ -1,0 +1,44 @@
+on:
+  workflow_call: {}
+name: publish
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Load MongoDB binary cache
+        id: cache-mongodb-binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: 20
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Verify the integrity of provenance attestations and registry signatures for installed dependencies
+        run: pnpm audit signatures
+
+      - name: NPM Publish
+        run: pnpm publish
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}

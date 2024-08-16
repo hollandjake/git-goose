@@ -42,6 +42,9 @@ export class GitFromDocument<TargetDocType, TPatcherName extends PatcherName> ex
     return this.doc.model().hydrate(targetCommit);
   }
 
+  /**
+   * Fetch the current state of the active working reference document
+   */
   public async getActiveDoc() {
     return this.objectifyDoc();
   }
@@ -79,10 +82,8 @@ export class GitFromDocument<TargetDocType, TPatcherName extends PatcherName> ex
   }
 
   protected async commit() {
-    const prev = await this.getHeadDoc();
     const curr = await this.getActiveDoc();
-
-    await this.commitFromRefId(this.refId, prev, curr);
+    await super.commit();
 
     // Update the HEAD
     this.doc.$locals[HEAD] = curr;

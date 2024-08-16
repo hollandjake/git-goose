@@ -24,7 +24,6 @@
   },
   "scripts": {
     "build": "rollup -c",
-    "ci:publish": "pnpm publish -r",
     "clean": "gts clean",
     "clean:build": "pnpm clean && pnpm build",
     "lint": "gts lint",
@@ -41,7 +40,7 @@
     "@mnrendra/rollup-plugin-mixexport": "^1.1.0",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-typescript": "^11.1.6",
-    "@types/node": "^22.2.0",
+    "@types/node": "^22.3.0",
     "@vitest/coverage-istanbul": "^2.0.5",
     "eslint": "^8.57.0",
     "gts": "^5.3.1",
