@@ -1,5 +1,11 @@
 # git-goose
 
+## 0.2.0
+
+### Minor Changes
+
+- [`97ecf8ef`](https://github.com/hollandjake/git-goose/commit/97ecf8ef26e9c2e2991fd761689f6a084d246ffe) Thanks [@hollandjake](https://github.com/hollandjake)! - Modularize Git System for ease of maintainability
+
 ## 0.1.0
 
 ### Minor Changes
