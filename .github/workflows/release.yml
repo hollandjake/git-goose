@@ -1,24 +1,17 @@
-name: Release
-
 on:
   push:
     branches:
       - main
 
-concurrency: ${{ github.workflow }}-${{ github.ref }}
-env:
-  MONGOMS_PREFER_GLOBAL_PATH: true
-jobs:
-  release:
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+permissions:
+  contents: write
+  pull-requests: write
 
-    name: Release
+name: release-please
+
+jobs:
+  release-please:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write # to be able to publish a GitHub release
-      issues: write # to be able to comment on released issues
-      pull-requests: write # to be able to comment on released pull requests
-      id-token: write # to enable use of OIDC for npm provenance
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -54,19 +47,27 @@ jobs:
         run: pnpm audit signatures
 
       - name: Release
-        uses: cycjimmy/semantic-release-action@v4
+        uses: googleapis/release-please-action@v4
         with:
-          branches: |
-            [
-              '+([0-9])?(.{+([0-9]),x}).x',
-              'main'
-            ]
-          extra_plugins: |
-            @semantic-release/commit-analyzer
-            @semantic-release/changelog
-            @semantic-release/npm
-            @semantic-release/git
-            @semantic-release/github
+          release-type: node
+
+      - if: ${{ steps.release.outputs.release_created }}
+        name: NPM Publish
+        run: pnpm publish
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+
+      - if: ${{ steps.release.outputs.release_created }}
+        name: tag major and minor versions
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git remote add gh-token "https://${{ secrets.GITHUB_TOKEN }}@github.com/googleapis/release-please-action.git"
+          git tag -d v${{ steps.release.outputs.major }} || true
+          git tag -d v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} || true
+          git push origin :v${{ steps.release.outputs.major }} || true
+          git push origin :v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} || true
+          git tag -a v${{ steps.release.outputs.major }} -m "Release v${{ steps.release.outputs.major }}"
+          git tag -a v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} -m "Release v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}"
+          git push origin v${{ steps.release.outputs.major }}
+          git push origin v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}
