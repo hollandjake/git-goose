@@ -1,5 +1,12 @@
 # git-goose
 
+## [0.3.0](https://github.com/hollandjake/git-goose/compare/v0.2.0...v0.3.0) (2024-08-16)
+
+
+### Features
+
+* model scoped updates ([#15](https://github.com/hollandjake/git-goose/issues/15)) ([41b7ca8](https://github.com/hollandjake/git-goose/commit/41b7ca863e19fe3a885babaaf30ca244d508f361))
+
 ## 0.2.0
 
 ### Minor Changes
