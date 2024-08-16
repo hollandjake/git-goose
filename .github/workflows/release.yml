@@ -7,25 +7,20 @@ permissions:
   contents: write
   pull-requests: write
 
-name: release-please
+name: Release
 
 jobs:
-  release-please:
+  test:
+    uses: ./.github/workflows/test.yml
+  release:
+    needs: test
     runs-on: ubuntu-latest
     steps:
-      - name: Test
-        uses: ./.github/workflows/test.yml
-
       - name: Release
         uses: googleapis/release-please-action@v4
         id: release
         with:
           release-type: node
-
-      - if: ${{ steps.release.outputs.release_created }}
-        name: Publish
-        uses: ./.github/workflows/publish.yml
-
       - if: ${{ steps.release.outputs.release_created }}
         name: tag major and minor versions
         run: |
@@ -40,3 +35,9 @@ jobs:
           git tag -a v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} -m "Release v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}"
           git push origin v${{ steps.release.outputs.major }}
           git push origin v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+  publish:
+    needs: release
+    if: ${{ needs.release.outputs.release_created }}
+    uses: ./.github/workflows/publish.yml
