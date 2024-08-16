@@ -6,6 +6,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  id-token: write
 
 name: Release
 
@@ -21,26 +22,10 @@ jobs:
         id: release
         with:
           release-type: node
-      - if: ${{ steps.release.outputs.release_created }}
-        name: Checkout
-        uses: actions/checkout@v4
-      - if: ${{ steps.release.outputs.release_created }}
-        name: tag major and minor versions
-        run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git remote add gh-token "https://${{ secrets.GITHUB_TOKEN }}@github.com/googleapis/release-please-action.git"
-          git tag -d v${{ steps.release.outputs.major }} || true
-          git tag -d v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} || true
-          git push origin :v${{ steps.release.outputs.major }} || true
-          git push origin :v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} || true
-          git tag -a v${{ steps.release.outputs.major }} -m "Release v${{ steps.release.outputs.major }}"
-          git tag -a v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} -m "Release v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}"
-          git push origin v${{ steps.release.outputs.major }}
-          git push origin v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
   publish:
     needs: release
     if: ${{ needs.release.outputs.release_created }}
     uses: ./.github/workflows/publish.yml
+    secrets: inherit
