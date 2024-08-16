@@ -1,8 +1,17 @@
 on:
+  pull_request:
+    branches:
+      - main
   workflow_call: {}
-name: publish
+
+permissions:
+  contents: write
+  pull-requests: write
+
+name: build
+
 jobs:
-  publish:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -37,8 +46,3 @@ jobs:
 
       - name: Verify the integrity of provenance attestations and registry signatures for installed dependencies
         run: pnpm audit signatures
-
-      - name: NPM Publish
-        run: pnpm publish
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
