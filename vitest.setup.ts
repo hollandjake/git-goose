@@ -13,6 +13,7 @@ beforeAll(async () => {
 
 afterEach(async () => {
   for (const model in mongoose.models) mongoose.deleteModel(model);
+  await mongoose.connection.dropDatabase();
 });
 
 afterAll(async () => {

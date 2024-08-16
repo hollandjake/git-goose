@@ -28,7 +28,7 @@ const pairs = [
   ],
 ];
 
-test.for(pairs)('diff+patch: [%s] => [%s]', ([input, output]) => {
+test.concurrent.for(pairs)('diff+patch: [%s] => [%s]', ([input, output]) => {
   const patch = createPatch(input, output);
   const actual_output = clone(input);
   applyPatch(actual_output, patch);

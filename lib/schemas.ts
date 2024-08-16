@@ -31,7 +31,7 @@ export const DBCommitSchema = new Schema<DBCommit>(
     snapshot: { type: Schema.Types.Mixed, immutable: true, select: false },
   },
   { versionKey: false, toObject: { virtuals: ['id'] } }
-).index({ refId: 1, date: 1 }, { unique: true });
+);
 
 export type DBCommitModel<TargetDocType = unknown> = Model<DBCommit<TargetDocType>>;
 export type DBCommitDocument<TargetDocType = unknown, PatchName extends PatcherName = PatcherName> = HydratedDocument<

@@ -1,72 +1,42 @@
-name: Release
-
 on:
   push:
     branches:
       - main
 
-concurrency: ${{ github.workflow }}-${{ github.ref }}
-env:
-  MONGOMS_PREFER_GLOBAL_PATH: true
+permissions:
+  contents: write
+  pull-requests: write
+
+name: release-please
+
 jobs:
-  release:
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
-
-    name: Release
+  release-please:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write # to be able to publish a GitHub release
-      issues: write # to be able to comment on released issues
-      pull-requests: write # to be able to comment on released pull requests
-      id-token: write # to enable use of OIDC for npm provenance
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Install Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "pnpm"
-
-      - name: Load MongoDB binary cache
-        id: cache-mongodb-binaries
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/mongodb-binaries
-          key: 20
-
-      - name: Install dependencies
-        run: pnpm install
-
       - name: Test
-        run: pnpm test
-
-      - name: Build
-        run: pnpm build
-
-      - name: Verify the integrity of provenance attestations and registry signatures for installed dependencies
-        run: pnpm audit signatures
+        uses: ./.github/workflows/test.yml
 
       - name: Release
-        uses: cycjimmy/semantic-release-action@v4
+        uses: googleapis/release-please-action@v4
+        id: release
         with:
-          branches: |
-            [
-              '+([0-9])?(.{+([0-9]),x}).x',
-              'main'
-            ]
-          extra_plugins: |
-            @semantic-release/commit-analyzer
-            @semantic-release/changelog
-            @semantic-release/npm
-            @semantic-release/git
-            @semantic-release/github
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          release-type: node
+
+      - if: ${{ steps.release.outputs.release_created }}
+        name: Publish
+        uses: ./.github/workflows/publish.yml
+
+      - if: ${{ steps.release.outputs.release_created }}
+        name: tag major and minor versions
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git remote add gh-token "https://${{ secrets.GITHUB_TOKEN }}@github.com/googleapis/release-please-action.git"
+          git tag -d v${{ steps.release.outputs.major }} || true
+          git tag -d v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} || true
+          git push origin :v${{ steps.release.outputs.major }} || true
+          git push origin :v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} || true
+          git tag -a v${{ steps.release.outputs.major }} -m "Release v${{ steps.release.outputs.major }}"
+          git tag -a v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} -m "Release v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}"
+          git push origin v${{ steps.release.outputs.major }}
+          git push origin v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}

@@ -1,5 +1,4 @@
 import { type FilterQuery, type ProjectionType, type QueryOptions, Require_id } from 'mongoose';
-import { GitError } from '../errors';
 import { Commit, CommitRef, Nullable, Patch, PatcherName, RefId } from '../types';
 import { GitBase } from './base';
 
@@ -52,7 +51,7 @@ export abstract class GitWithContext<TargetDocType, TPatcherName extends Patcher
 
     if (commitB === undefined) {
       const targetCommit = await this.rebuildCommitFromRefId(this.refId, commitA!);
-      return this.createPatch(targetCommit, await this.getActiveDoc());
+      return this.createPatch(targetCommit, await this.getActiveDoc(), true);
     }
 
     return this.diffFromRefId(this.refId, commitA!, commitB);
@@ -83,24 +82,29 @@ export abstract class GitWithContext<TargetDocType, TPatcherName extends Patcher
    * Returns the difference between the active document and the current HEAD commit
    */
   public async status(): Promise<Patch<TPatcherName>> {
-    return this.createPatch(await this.getHeadDoc(), await this.getActiveDoc());
+    return this.createPatch(await this.getHeadDoc(), await this.getActiveDoc(), true);
   }
 
-  protected async commit(): Promise<void> {
-    throw new GitError('Without a document there is no way to detect any changes');
+  protected async commit(curr?: Nullable<Require_id<TargetDocType>>): Promise<void> {
+    const prev = await this.getHeadDoc();
+    if (curr === undefined) curr = await this.getActiveDoc();
+
+    await this.commitFromRefId(this.refId, prev, curr);
   }
 
   /**
    * Fetch the current state of the active working reference document
+   *
+   * When no direct connection to the currently working document, we fetch from the db and objectify
    */
   protected async getActiveDoc(): Promise<Nullable<Require_id<TargetDocType>>> {
-    return this.getHeadDoc();
+    return this._referenceModel.findOne({ _id: this.refId }).then(this.objectify);
   }
 
   /**
    * Fetch the current state of the HEAD commit reference document
    */
   protected async getHeadDoc(): Promise<Nullable<Require_id<TargetDocType>>> {
-    return this.rebuildCommitFromRefId(this.refId, 'HEAD');
+    return this.rebuildCommitFromRefId(this.refId, 'HEAD', true);
   }
 }

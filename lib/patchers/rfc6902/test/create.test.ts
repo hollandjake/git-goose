@@ -2,7 +2,7 @@ import { expect, test } from 'vitest';
 import { AddOperation, CopyOperation, MoveOperation, RemoveOperation, ReplaceOperation, TestOperation } from '../diff';
 import { applyPatch, createTests } from '../index';
 
-test('simple patch', () => {
+test.concurrent('simple patch', () => {
   // > For example, given the JSON document
   const obj = { itemCodes: ['123', '456', '789'] };
 
@@ -18,7 +18,7 @@ test('simple patch', () => {
   expect(() => applyPatch(obj, actual), `tests "${JSON.stringify(actual)}" should apply without errors`).not.toThrow();
 });
 
-test('complex patch', () => {
+test.concurrent('complex patch', () => {
   // > For example, given the JSON document
   const obj = {
     items: [
@@ -62,7 +62,7 @@ test('complex patch', () => {
   expect(() => applyPatch(obj, actual), `tests "${JSON.stringify(actual)}" should apply without errors`).not.toThrow();
 });
 
-test('simple patch with add', () => {
+test.concurrent('simple patch with add', () => {
   // > For example, given the JSON document
   const obj = { itemCodes: ['123', '456', '789'] };
 
@@ -76,7 +76,7 @@ test('simple patch with add', () => {
   expect(actual, `patch "${JSON.stringify(patch)}" should generate no tests`).toEqual(expected);
 });
 
-test('simple patch with move', () => {
+test.concurrent('simple patch with move', () => {
   // > For example, given the JSON document
   const obj = { itemCodes: ['123', '456', '789'], alternateItemCodes: ['abc'] };
 
@@ -95,7 +95,7 @@ test('simple patch with move', () => {
   expect(() => applyPatch(obj, actual), `tests "${JSON.stringify(actual)}" should apply without errors`).not.toThrow();
 });
 
-test('simple patch with copy', () => {
+test.concurrent('simple patch with copy', () => {
   // > For example, given the JSON document
   const obj = { itemCodes: ['123', '456', '789'], alternateItemCodes: [] };
 
@@ -120,7 +120,7 @@ test('simple patch with copy', () => {
   expect(() => applyPatch(obj, actual), `tests "${JSON.stringify(actual)}" should apply without errors`).not.toThrow();
 });
 
-test('simple patch with replace', () => {
+test.concurrent('simple patch with replace', () => {
   // > For example, given the JSON document
   const obj = { itemCodes: ['123', '456', '789'] };
 

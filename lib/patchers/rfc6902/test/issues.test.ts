@@ -19,7 +19,7 @@ function checkRoundtrip(
   expect(actual_output, 'should apply patch to arrive at output').toEqual(output);
 }
 
-test('issues/3', () => {
+test.concurrent('issues/3', () => {
   const input = { arr: ['1', '2', '2'] };
   const output = { arr: ['1'] };
   const expected_patch: Operation[] = [
@@ -29,7 +29,7 @@ test('issues/3', () => {
   checkRoundtrip(input, output, expected_patch);
 });
 
-test('issues/4', () => {
+test.concurrent('issues/4', () => {
   const input = ['A', 'B'];
   const output = ['B', 'A'];
   const expected_patch: Operation[] = [
@@ -39,7 +39,7 @@ test('issues/4', () => {
   checkRoundtrip(input, output, expected_patch);
 });
 
-test('issues/5', () => {
+test.concurrent('issues/5', () => {
   const input: string[] = [];
   const output = ['A', 'B'];
   const expected_patch: Operation[] = [
@@ -49,14 +49,14 @@ test('issues/5', () => {
   checkRoundtrip(input, output, expected_patch);
 });
 
-test('issues/9', () => {
+test.concurrent('issues/9', () => {
   const input = [{ A: 1, B: 2 }, { C: 3 }];
   const output = [{ A: 1, B: 20 }, { C: 3 }];
   const expected_patch: Operation[] = [{ op: 'replace', path: '/0/B', value: 20 }];
   checkRoundtrip(input, output, expected_patch);
 });
 
-test('issues/12', () => {
+test.concurrent('issues/12', () => {
   const input = { name: 'ABC', repositories: ['a', 'e'] };
   const output = { name: 'ABC', repositories: ['a', 'b', 'c', 'd', 'e'] };
   const expected_patch: Operation[] = [
@@ -67,7 +67,7 @@ test('issues/12', () => {
   checkRoundtrip(input, output, expected_patch);
 });
 
-test('issues/15', () => {
+test.concurrent('issues/15', () => {
   const customDiff: VoidableDiff = (input: any, output: any, ptr: Pointer) => {
     if (input instanceof Date && output instanceof Date && input.valueOf() !== output.valueOf()) {
       return [{ op: 'replace', path: ptr.toString(), value: output }];
@@ -80,7 +80,7 @@ test('issues/15', () => {
   checkRoundtrip(input, output, expected_patch, customDiff);
 });
 
-test('issues/15/array', () => {
+test.concurrent('issues/15/array', () => {
   const customDiff: VoidableDiff = (input: any, output: any, ptr: Pointer) => {
     if (input instanceof Date && output instanceof Date && input.valueOf() !== output.valueOf()) {
       return [{ op: 'replace', path: ptr.toString(), value: output }];
@@ -93,7 +93,7 @@ test('issues/15/array', () => {
   checkRoundtrip(input, output, expected_patch, customDiff);
 });
 
-test('issues/29', () => {
+test.concurrent('issues/29', () => {
   /**
    Custom diff function that short-circuits recursion when the last token
    in the current pointer is the key "stop_recursing", such that that key's
@@ -132,14 +132,14 @@ test('issues/29', () => {
   checkRoundtrip(nested_input, nested_output, nested_expected_patch, undefined, nested_actual_patch);
 });
 
-test('issues/33', () => {
+test.concurrent('issues/33', () => {
   const object = { root: { 0: 4 } };
   const array = { root: [4] };
   checkRoundtrip(object, array, [{ op: 'replace', path: '/root', value: [4] }]);
   checkRoundtrip(array, object, [{ op: 'replace', path: '/root', value: { 0: 4 } }]);
 });
 
-test('issues/34', () => {
+test.concurrent('issues/34', () => {
   const input = [3, 4];
   const output = [3, 4];
   delete output[0];
@@ -147,7 +147,7 @@ test('issues/34', () => {
   checkRoundtrip(input, output, expected_patch);
 });
 
-test('issues/35', () => {
+test.concurrent('issues/35', () => {
   const input = { name: 'bob', image: undefined, cat: null };
   const output = { name: 'bob', image: 'foo.jpg', cat: 'nikko' };
   const expected_patch: Operation[] = [
@@ -157,7 +157,7 @@ test('issues/35', () => {
   checkRoundtrip(input, output, expected_patch);
 });
 
-test('issues/36', () => {
+test.concurrent('issues/36', () => {
   const input = [undefined, 'B']; // same as: const input = ['A', 'B']; delete input[0]
   const output = ['A', 'B'];
   const expected_patch: Operation[] = [
@@ -167,14 +167,14 @@ test('issues/36', () => {
   checkRoundtrip(input, output, expected_patch);
 });
 
-test('issues/37', () => {
+test.concurrent('issues/37', () => {
   const value = { id: 'chbrown' };
   const output = applyPatch(value, [{ op: 'copy', from: '/id', path: '/name' }]);
   const expected_value = { id: 'chbrown', name: 'chbrown' };
   expect(output, 'should apply patch to arrive at output').toEqual(expected_value);
 });
 
-test('issues/76', () => {
+test.concurrent('issues/76', () => {
   expect(({} as any).polluted === undefined, 'Object prototype should not be polluted').toBe(true);
   const value = {};
   applyPatch(value, [{ op: 'add', path: '/__proto__/polluted', value: 'Hello!' }]);
@@ -182,7 +182,7 @@ test('issues/76', () => {
   expect(({} as any).polluted === undefined, 'Object prototype should still not be polluted').toBe(true);
 });
 
-test('issues/78', () => {
+test.concurrent('issues/78', () => {
   const user = { firstName: 'Chris' };
   applyPatch(user, [{ op: 'add', path: '/createdAt', value: new Date('2010-08-10T22:10:48Z') }]);
   expect((user['createdAt' as never] as Date).getTime(), 'should add Date recoverably').toEqual(1281478248000);

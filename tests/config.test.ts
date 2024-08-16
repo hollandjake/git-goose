@@ -1,5 +1,3 @@
-/* eslint @typescript-eslint/ban-ts-comment: 0 */
-
 import { describe, expect, test } from 'vitest';
 import { getPatcher, Patchers } from '../lib/config';
 import { GitError } from '../lib/errors';
@@ -24,9 +22,9 @@ describe('Patchers', () => {
     const patcher = Patchers['json-patch'];
 
     const patches = [
-      [],
-      [],
-      [],
+      null,
+      null,
+      null,
       [{ op: 'replace', path: '', value: {} }],
       [{ op: 'replace', path: '', value: null }],
       [{ op: 'replace', path: '', value: { a: 'a' } }],

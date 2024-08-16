@@ -1,5 +1,3 @@
-/* eslint @typescript-eslint/ban-ts-comment: 0 */
-
 import mongoose, { Schema } from 'mongoose';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import * as config from '../lib/config';

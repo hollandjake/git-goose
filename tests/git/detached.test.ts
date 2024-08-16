@@ -1,5 +1,3 @@
-/* eslint @typescript-eslint/ban-ts-comment: 0 */
-
 import { describe, expect, test } from 'vitest';
 import { GitError } from '../../lib/errors';
 import { getModel } from '../utils';

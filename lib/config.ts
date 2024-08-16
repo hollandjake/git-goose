@@ -38,8 +38,15 @@ export const RequiredConfig: (keyof ContextualGitConfig)[] = [
 
 export const Patchers = {
   'json-patch': <Patcher<rfc6902.Patch, object>>{
-    create: rfc6902.createPatch,
-    apply: rfc6902.applyPatch,
+    create(input, output) {
+      const patch = rfc6902.createPatch(input, output);
+      if (!patch.length) return null;
+      return patch;
+    },
+    apply(target, patch) {
+      if (!patch) return target;
+      return rfc6902.applyPatch(target, patch);
+    },
   },
 } satisfies Record<string, Patcher>;
 
