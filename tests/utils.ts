@@ -1,4 +1,5 @@
-import mongoose, { HydratedDocument, InferSchemaType, Model, ObtainSchemaGeneric, Schema } from 'mongoose';
+import { randomUUID } from 'crypto';
+import mongoose, { Connection, HydratedDocument, InferSchemaType, Model, ObtainSchemaGeneric, Schema } from 'mongoose';
 import { ContextualGitConfig } from '../lib/config';
 import { committable, git } from '../lib/plugin';
 import { CommittableModel } from '../lib/types';
@@ -37,12 +38,20 @@ export function getModel<TSchema extends Schema = ExampleSchemaType>(
 ): SchemaToCommittableModel<TSchema>;
 export function getModel<TSchema extends Schema = ExampleSchemaType>(
   schema?: TSchema | null,
-  config?: Partial<ContextualGitConfig>
+  config?: Partial<ContextualGitConfig>,
+  connection?: Connection
+): SchemaToCommittableModel<TSchema>;
+export function getModel<TSchema extends Schema = ExampleSchemaType>(
+  schema?: TSchema | null,
+  config?: Partial<ContextualGitConfig>,
+  connection: Connection = mongoose.connection
 ): SchemaToCommittableModel<TSchema> {
   if (!schema || !(schema instanceof Schema)) {
     [schema, config] = [config as never, (schema ?? undefined) as never];
   }
   if (!schema) schema = exampleSchema as TSchema;
   const postSchema = schema.clone().plugin(git, config);
-  return committable(mongoose.model('test', postSchema, 'test', { overwriteModels: true }));
+  const modelName = `test-${randomUUID()}`;
+  const model = connection.model(modelName, postSchema, modelName);
+  return committable(model) as never;
 }

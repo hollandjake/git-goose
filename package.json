@@ -16,10 +16,14 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "files": [
-    "dist"
+    "dist",
+    "index.ts",
+    "lib"
   ],
   "directories": {
+    "dist": "./dist",
     "lib": "./src",
+    "src": "./src",
     "test": "./tests"
   },
   "scripts": {
@@ -28,7 +32,7 @@
     "clean:build": "pnpm clean && pnpm build",
     "lint": "gts lint",
     "lint:fix": "gts fix",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run",
     "test:watch": "vitest"
   },
   "types": "./dist/index.d.ts",
@@ -54,9 +58,12 @@
   },
   "keywords": [
     "change tracking",
+    "commonjs",
+    "esm",
     "git",
     "history",
     "mongoose",
+    "plugin",
     "typescript"
   ],
   "readme": "./README.md"

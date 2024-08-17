@@ -1,8 +1,9 @@
 import mongoose, { Schema } from 'mongoose';
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterAll, beforeEach, describe, test, vi } from 'vitest';
 import * as config from '../lib/config';
 import { GitError } from '../lib/errors';
 import { GitModel } from '../lib/model';
+import './withDB';
 
 declare module 'vitest' {
   export interface TestContext {
@@ -31,47 +32,50 @@ vi.mock('../lib/config', async importOriginal => {
 beforeEach(() => {
   vi.resetAllMocks();
 });
-describe('GitModel', () => {
-  test('from global config', ({ GitGlobalConfig }) => {
+describe.concurrent('GitModel', () => {
+  afterAll(() => {
+    mongoose.deleteModel(/GitModel-/);
+  });
+  test('from global config', ({ GitGlobalConfig, expect }) => {
     mocks.GitGlobalConfig.mockReturnValue({
       ...GitGlobalConfig,
       connection: mongoose.connection,
-      collectionName: 'globalConfigCollectionName',
+      collectionName: 'GitModel-globalConfigCollectionName',
     });
     const model = GitModel();
-    expect(model.collection.collectionName).toEqual('globalConfigCollectionName');
+    expect(model.collection.collectionName).toEqual('GitModel-globalConfigCollectionName');
   });
-  test('from missing global config connection', ({ GitGlobalConfig }) => {
+  test('from missing global config connection', ({ GitGlobalConfig, expect }) => {
     mocks.GitGlobalConfig.mockReturnValue({
       ...GitGlobalConfig,
       connection: undefined,
     });
     expect(() => GitModel()).toThrow(GitError);
   });
-  test('from missing global config collectionName', ({ GitGlobalConfig }) => {
+  test('from missing global config collectionName', ({ GitGlobalConfig, expect }) => {
     mocks.GitGlobalConfig.mockReturnValue({
       ...GitGlobalConfig,
       collectionName: undefined,
     });
     expect(() => GitModel()).toThrow(GitError);
   });
-  test('when non-committal model already exists', ({ GitGlobalConfig }) => {
-    mongoose.model('test', new Schema({}));
+  test('when non-committal model already exists', ({ GitGlobalConfig, expect }) => {
+    mongoose.model('GitModel-preDefinedModel', new Schema({}));
     mocks.GitGlobalConfig.mockReturnValue({
       ...GitGlobalConfig,
-      collectionName: 'test',
+      collectionName: 'GitModel-preDefinedModel',
     });
     expect(() => GitModel()).toThrow(GitError);
   });
-  test('from provided config', ({ GitGlobalConfig }) => {
+  test('from provided config', ({ GitGlobalConfig, expect }) => {
     mocks.GitGlobalConfig.mockReturnValue(GitGlobalConfig);
-    const model = GitModel({ collectionName: 'scopedCollectionName' });
-    expect(model.collection.collectionName).toEqual('scopedCollectionName');
+    const model = GitModel({ collectionName: 'GitModel-scopedCollectionName' });
+    expect(model.collection.collectionName).toEqual('GitModel-scopedCollectionName');
   });
-  test('when model already exists', ({ GitGlobalConfig }) => {
+  test('when model already exists', ({ GitGlobalConfig, expect }) => {
     mocks.GitGlobalConfig.mockReturnValue({
       ...GitGlobalConfig,
-      collectionName: 'test',
+      collectionName: 'GitModel-existingModel',
     });
     expect(GitModel()).toBe(GitModel());
   });

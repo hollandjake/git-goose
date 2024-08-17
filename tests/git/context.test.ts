@@ -1,14 +1,31 @@
 /* eslint @typescript-eslint/no-explicit-any: 0 */
 
-import { Types } from 'mongoose';
-import { describe, expect, test, vi } from 'vitest';
+import mongoose, { Types } from 'mongoose';
+import { beforeEach, describe, test, vi } from 'vitest';
 import { GitError } from '../../lib/errors';
 import { GitDetached } from '../../lib/git';
 import { CommittableDocument } from '../../lib/types';
-import { exampleSchema, getModel } from '../utils';
+import { exampleSchema, ExampleSchemaType, getModel, SchemaToCommittableModel } from '../utils';
+import '../withDB';
 
-const Model = getModel({ patcher: 'json-patch' });
-const globalGit = Model.$git();
+declare module 'vitest' {
+  export interface TestContext {
+    Model: SchemaToCommittableModel<ExampleSchemaType>;
+    globalGit: ReturnType<SchemaToCommittableModel<ExampleSchemaType>['$git']>;
+  }
+}
+
+beforeEach(ctx => {
+  const Model = getModel({ patcher: 'json-patch' });
+  const globalGit = Model.$git();
+
+  ctx.Model = Model;
+  ctx.globalGit = globalGit;
+
+  return () => {
+    mongoose.deleteModel(Model.modelName).deleteModel(globalGit._model.modelName);
+  };
+});
 
 const gitMaker = [
   ['by object', (o: CommittableDocument<any>) => o.$git] as const,
@@ -16,22 +33,23 @@ const gitMaker = [
 ] as const;
 
 describe('checkout', () => {
-  describe('by commit id', () => {
-    test.for(gitMaker)('%s', async ([, git]) => {
+  describe.concurrent('by commit id', () => {
+    test.for(gitMaker)('%s', async ([, git], { Model, globalGit, expect }) => {
       const obj = await Model.create({ some_field: 'some_value' });
       obj.some_field = 'some_other_value';
       await obj.save();
 
       const log = await git(obj, globalGit).log();
 
-      await expect(git(obj, globalGit).checkout(log[1]._id)).resolves.toMatchObject({
+      const checkout = await git(obj, globalGit).checkout(log[1]._id);
+      expect(checkout).toMatchObject({
         _id: obj._id,
         some_field: 'some_value',
       });
     });
   });
-  describe('by commit id string', () => {
-    test.for(gitMaker)('%s', async ([, git]) => {
+  describe.concurrent('by commit id string', () => {
+    test.for(gitMaker)('%s', async ([, git], { Model, globalGit, expect }) => {
       const obj = await Model.create({ some_field: 'some_value' });
       obj.some_field = 'some_other_value';
       await obj.save();
@@ -44,12 +62,18 @@ describe('checkout', () => {
       });
     });
   });
-  describe('by date', () => {
-    test.for(gitMaker)('%s', async ([, git]) => {
+  describe.sequential('by date', () => {
+    // Seems to be a bug in vitest fake timers not supporting parallelism, so for now these are sequential
+    beforeEach(() => {
       vi.useFakeTimers();
+
+      return () => vi.useRealTimers();
+    });
+
+    test.for(gitMaker)('%s', async ([, git], { Model, globalGit, expect }) => {
       vi.setSystemTime(new Date(0));
       const obj = await Model.create({ some_field: 'some_value' });
-      vi.setSystemTime(new Date(1));
+      vi.advanceTimersByTime(1000);
       obj.some_field = 'some_other_value';
       await obj.save();
 
@@ -61,12 +85,18 @@ describe('checkout', () => {
         _id: obj._id,
         some_field: 'some_value',
       });
-      vi.useRealTimers();
     });
   });
-  describe('from commit id', () => {
-    test.for(gitMaker)('%s', async ([, git]) => {
-      const Model = getModel(exampleSchema, { snapshotWindow: 2, patcher: 'json-patch' });
+  describe.concurrent('from commit id', () => {
+    beforeEach(ctx => {
+      ctx.Model = getModel(exampleSchema, { snapshotWindow: 2, patcher: 'json-patch' });
+      ctx.globalGit = ctx.Model.$git();
+
+      return () => {
+        mongoose.deleteModel(ctx.Model.modelName).deleteModel(ctx.globalGit._model.modelName);
+      };
+    });
+    test.for(gitMaker)('%s', async ([, git], { Model, globalGit, expect }) => {
       const obj = await Model.create({ some_field: '1' });
       obj.some_field = '2';
       await obj.save();
@@ -92,8 +122,8 @@ describe('checkout', () => {
     });
   });
 
-  describe('by offset', () => {
-    test.for(gitMaker)('%s', async ([, git]) => {
+  describe.concurrent('by offset', () => {
+    test.for(gitMaker)('%s', async ([, git], { Model, globalGit, expect }) => {
       const obj = await Model.create({ some_field: '1' });
       obj.some_field = '2';
       await obj.save();
@@ -113,8 +143,8 @@ describe('checkout', () => {
     });
   });
 
-  describe('by invalid commit ref', () => {
-    test.for(gitMaker)('%s', async ([, git]) => {
+  describe.concurrent('by invalid commit ref', () => {
+    test.for(gitMaker)('%s', async ([, git], { Model, globalGit, expect }) => {
       const obj = await Model.create({ some_field: '1' });
       await expect(git(obj, globalGit).checkout(1)).rejects.toThrow(GitError);
       await expect(git(obj, globalGit).checkout(2)).rejects.toThrow(GitError);
@@ -130,8 +160,8 @@ describe('checkout', () => {
   });
 });
 
-describe('diff', () => {
-  test('with no args', async () => {
+describe.concurrent('diff', () => {
+  test('with no args', async ({ Model, globalGit, expect }) => {
     const obj = await Model.create({ some_field: 'some_value' });
     obj.some_field = 'some_other_value';
 
@@ -147,7 +177,7 @@ describe('diff', () => {
     });
   });
   describe('check previous commit', () => {
-    test.for(gitMaker)('%s', async ([, git]) => {
+    test.for(gitMaker)('%s', async ([, git], { Model, globalGit, expect }) => {
       const obj = await Model.create({ some_field: 'some_value' });
       obj.some_field = 'some_other_value';
       await obj.save();
@@ -163,7 +193,7 @@ describe('diff', () => {
     });
   });
   describe('check a range of commits', () => {
-    test.for(gitMaker)('%s', async ([, git]) => {
+    test.for(gitMaker)('%s', async ([, git], { Model, globalGit, expect }) => {
       const obj = await Model.create({ some_field: '1' });
       obj.some_field = '2';
       await obj.save();
@@ -177,7 +207,7 @@ describe('diff', () => {
     });
   });
   describe('between two non-HEAD commits', () => {
-    test.for(gitMaker)('%s', async ([, git]) => {
+    test.for(gitMaker)('%s', async ([, git], { Model, globalGit, expect }) => {
       const obj = await Model.create({ some_field: '1' });
       obj.some_field = '2';
       await obj.save();
@@ -192,33 +222,33 @@ describe('diff', () => {
   });
 });
 
-describe('log', () => {
+describe.concurrent('log', () => {
   describe('pre save', () => {
-    test.for(gitMaker)('%s', async ([, git]) => {
+    test.for(gitMaker)('%s', async ([, git], { Model, globalGit, expect }) => {
       const obj = new Model({ some_field: 'some_value' });
       await expect(git(obj, globalGit).log()).resolves.toHaveLength(0);
     });
   });
   describe('post save', () => {
-    test.for(gitMaker)('%s', async ([, git]) => {
+    test.for(gitMaker)('%s', async ([, git], { Model, globalGit, expect }) => {
       const obj = await Model.create({ some_field: 'some_value' });
       const log = await git(obj, globalGit).log();
 
       expect(log).toHaveLength(1);
-      expect(log[0].patch.type).toEqual('json-patch');
-      expect(new Set(log[0].patch.ops)).toEqual(
-        new Set([
+      expect(log[0].patch).toMatchObject({
+        type: 'json-patch',
+        ops: [
           {
             op: 'replace',
             path: '',
             value: { some_field: 'some_value', _id: obj._id },
           },
-        ])
-      );
+        ],
+      });
     });
   });
   describe('after update', () => {
-    test.for(gitMaker)('%s', async ([, git]) => {
+    test.for(gitMaker)('%s', async ([, git], { Model, globalGit, expect }) => {
       const obj = await Model.create({ some_field: 'some_value' });
       obj.some_field = 'some_other_value';
       await obj.save();
@@ -226,16 +256,22 @@ describe('log', () => {
       const log = await git(obj, globalGit).log();
 
       expect(log).toHaveLength(2);
-      expect(log[0].patch.type).toEqual('json-patch');
-      expect(new Set(log[0].patch.ops)).toEqual(
-        new Set([{ path: '/some_field', op: 'replace', value: 'some_other_value' }])
-      );
+      expect(log[0].patch).toMatchObject({
+        type: 'json-patch',
+        ops: [
+          {
+            op: 'replace',
+            path: '/some_field',
+            value: 'some_other_value',
+          },
+        ],
+      });
     });
   });
 });
 
-describe('status', () => {
-  test('new doc', async () => {
+describe.concurrent('status', () => {
+  test('new doc', async ({ Model, globalGit, expect }) => {
     const obj = new Model({ some_field: 'some_value' });
     await expect(obj.$git.status()).resolves.toEqual({
       type: 'json-patch',
@@ -250,12 +286,12 @@ describe('status', () => {
     // At this point the doc has not been committed to the db so there is no commits available
     await expect(globalGit.withRefId(obj._id).status()).resolves.toEqual({ type: 'json-patch', ops: null });
   });
-  test('after save', async () => {
+  test('after save', async ({ Model, globalGit, expect }) => {
     const obj = await Model.create({ some_field: 'some_value' });
     await expect(obj.$git.status()).resolves.toEqual({ type: 'json-patch', ops: null });
     await expect(globalGit.withRefId(obj._id).status()).resolves.toEqual({ type: 'json-patch', ops: null });
   });
-  test('before update', async () => {
+  test('before update', async ({ Model, globalGit, expect }) => {
     const obj = await Model.create({ some_field: 'some_value' });
     obj.some_field = 'some_other_value';
     await expect(obj.$git.status()).resolves.toEqual({

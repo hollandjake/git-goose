@@ -7,9 +7,7 @@ export default defineConfig({
     coverage: {
       provider: 'istanbul',
     },
-    setupFiles: ['./vitest.setup.ts'],
-    minWorkers: (process.env.CI === 'true' ? 1 : undefined),
-    maxWorkers: (process.env.CI === 'true' ? 1 : undefined),
+    slowTestThreshold: 1000,
   },
   define: {
     'import.meta.vitest': 'undefined',

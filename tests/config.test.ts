@@ -1,9 +1,9 @@
-import { describe, expect, test } from 'vitest';
+import { describe, test } from 'vitest';
 import { getPatcher, Patchers } from '../lib/config';
 import { GitError } from '../lib/errors';
 import { Patch } from '../lib/patchers/rfc6902';
 
-describe('Patchers', () => {
+describe.concurrent('Patchers', () => {
   const scenarios = [
     // No Change
     [null, null],
@@ -33,26 +33,26 @@ describe('Patchers', () => {
       [{ op: 'remove', path: '/b' }],
     ];
 
-    test.for(scenarios.map((s, i) => [...s, patches[i]]))('create(%j, %j)', async ([a, b, expected]) => {
+    test.for(scenarios.map((s, i) => [...s, patches[i]]))('create(%j, %j)', async ([a, b, expected], { expect }) => {
       expect(patcher.create(a, b)).toEqual(expected);
     });
-    test.for(scenarios.map(([a, b], i) => [a, patches[i], b]))('apply(%j, %j)', ([a, b, expected]) => {
+    test.for(scenarios.map(([a, b], i) => [a, patches[i], b]))('apply(%j, %j)', ([a, b, expected], { expect }) => {
       expect(patcher.apply(a, b as Patch)).toEqual(expected);
     });
   });
 });
 
-describe('getPatcher', () => {
-  test('can fetch existing patcher', async () => {
+describe.concurrent('getPatcher', () => {
+  test('can fetch existing patcher', async ({ expect }) => {
     const patcher = getPatcher('json-patch');
 
     expect(patcher.create).toBeInstanceOf(Function);
     expect(patcher.apply).toBeInstanceOf(Function);
   });
-  test('should throw error on missing provider', async () => {
+  test('should throw error on missing provider', async ({ expect }) => {
     expect(() => getPatcher('invalid' as never)).toThrow(GitError);
   });
-  test('should throw error on misconfigured provider create function', async () => {
+  test('should throw error on misconfigured provider create function', async ({ expect }) => {
     Patchers['test' as never] = {
       create: undefined,
     } as never;
@@ -60,7 +60,7 @@ describe('getPatcher', () => {
     // Cleanup
     delete Patchers['test' as never];
   });
-  test('should throw error on misconfigured provider apply function', async () => {
+  test('should throw error on misconfigured provider apply function', async ({ expect }) => {
     Patchers['test' as never] = {
       create: () => ({}),
       apply: undefined,

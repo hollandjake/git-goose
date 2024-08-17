@@ -1,11 +1,29 @@
 import mongoose, { Schema } from 'mongoose';
-import { describe, expect, test } from 'vitest';
+import { beforeEach, describe, test } from 'vitest';
 import { GitError } from '../lib/errors';
 import { committable, git } from '../lib/plugin';
-import { exampleSchema, getModel } from './utils';
+import { exampleSchema, ExampleSchemaType, getModel, SchemaToCommittableModel } from './utils';
+import './withDB';
 
-describe('committable', () => {
-  test('validate model is actually ours', async () => {
+declare module 'vitest' {
+  export interface TestContext {
+    Model: SchemaToCommittableModel<ExampleSchemaType>;
+  }
+}
+
+beforeEach(ctx => {
+  const Model = getModel({ patcher: 'json-patch' });
+  const globalGit = Model.$git();
+
+  ctx.Model = Model;
+
+  return () => {
+    mongoose.deleteModel(Model.modelName).deleteModel(globalGit._model.modelName);
+  };
+});
+
+describe.concurrent('committable', () => {
+  test('validate model is actually ours', async ({ expect }) => {
     const postSchema = exampleSchema.clone();
     expect(() => committable(mongoose.model('invalid', postSchema))).toThrow(GitError);
 
@@ -14,34 +32,35 @@ describe('committable', () => {
   });
 });
 
-describe('mongoose.plugin(git)', () => {
-  test('creates correct collection on default', async () => {
-    const Model = getModel();
+describe.concurrent('mongoose.plugin(git)', () => {
+  test('creates correct collection on default', async ({ expect, Model }) => {
     const a = await Model.create({ some_field: 'some_value' });
-    expect(a.$git._model.collection.collectionName).toEqual('test.git');
+    expect(a.$git._model.collection.collectionName).toEqual(`${Model.collection.collectionName}.git`);
   });
-  test('creates correct collection with custom suffix', async () => {
+  test('creates correct collection with custom suffix', async ({ expect }) => {
     const Model = getModel(exampleSchema, { collectionSuffix: '-suffix' });
     const a = await Model.create({ some_field: 'some_value' });
-    expect(a.$git._model.collection.collectionName).toEqual('test-suffix');
+    expect(a.$git._model.collection.collectionName).toEqual(`${Model.collection.collectionName}-suffix`);
+    mongoose.deleteModel(`${Model.collection.collectionName}`).deleteModel(`${Model.collection.collectionName}-suffix`);
   });
-  test('creates correct collection with custom collection name', async () => {
-    const Model = getModel(exampleSchema, { collectionName: 'some_collection' });
+  test('creates correct collection with custom collection name', async ({ expect }) => {
+    const Model = getModel(exampleSchema, { collectionName: 'custom_collection' });
     const a = await Model.create({ some_field: 'some_value' });
-    expect(a.$git._model.collection.collectionName).toEqual('some_collection');
+    expect(a.$git._model.collection.collectionName).toEqual('custom_collection');
+    mongoose.deleteModel(`${Model.collection.collectionName}`).deleteModel('custom_collection');
   });
-  test('creates correct collection with custom collection name and redundant suffix', async () => {
+  test('creates correct collection with custom collection name and redundant suffix', async ({ expect }) => {
     const Model = getModel(exampleSchema, { collectionName: 'some_collection', collectionSuffix: 'some_suffix' });
     const a = await Model.create({ some_field: 'some_value' });
     expect(a.$git._model.collection.collectionName).toEqual('some_collection');
+    mongoose.deleteModel(`${Model.collection.collectionName}`).deleteModel('some_collection');
   });
 });
 
-describe('document', () => {
-  const model = getModel();
-  test('.save()', async () => {
+describe.concurrent('document', () => {
+  test('.save()', async ({ expect, Model }) => {
     // Create
-    const obj = await model.create({ some_field: 'some_value' });
+    const obj = await Model.create({ some_field: 'some_value' });
     await expect(obj.$git.log()).resolves.toHaveLength(1);
     // Update
     obj.some_field = 'some_other_value';
@@ -50,27 +69,26 @@ describe('document', () => {
   });
 });
 
-describe('Model', () => {
-  const model = getModel();
-  test('.create', async () => {
-    const obj = await model.create({ some_field: 'some_value' });
+describe.concurrent('Model', () => {
+  test('.create', async ({ expect, Model }) => {
+    const obj = await Model.create({ some_field: 'some_value' });
     expect(obj.toObject()).toMatchObject({ some_field: 'some_value' });
     await expect(obj.$git.log()).resolves.toHaveLength(1);
   });
-  test('new', async () => {
+  test('new', async ({ expect, Model }) => {
     // Create
-    const obj = new model({ some_field: 'some_value' });
+    const obj = new Model({ some_field: 'some_value' });
     await expect(obj.$git.log()).resolves.toHaveLength(0);
     // Then save
     await obj.save();
     await expect(obj.$git.log()).resolves.toHaveLength(1);
   });
   describe('.updateOne', () => {
-    test('existing doc', async () => {
-      const a = await model.create({ some_field: 'target' });
-      const b = await model.create({ some_field: 'target' });
-      const c = await model.create({ some_field: 'non_target' });
-      await model.updateOne({ some_field: 'target' }, { some_field: 'new_val' });
+    test('existing doc', async ({ expect, Model }) => {
+      const a = await Model.create({ some_field: 'target' });
+      const b = await Model.create({ some_field: 'target' });
+      const c = await Model.create({ some_field: 'non_target' });
+      await Model.updateOne({ some_field: 'target' }, { some_field: 'new_val' });
 
       // We only update the first match
       await expect(a.$git.log()).resolves.toHaveLength(2);
@@ -79,22 +97,22 @@ describe('Model', () => {
       // Non-matching doc should be unaffected
       await expect(c.$git.log()).resolves.toHaveLength(1);
     });
-    test('non existing doc', async () => {
-      const c = await model.create({ some_field: 'non_target' });
-      await model.updateOne({ some_field: 'target' }, { some_field: 'new_val' });
+    test('non existing doc', async ({ expect, Model }) => {
+      const c = await Model.create({ some_field: 'non_target' });
+      await Model.updateOne({ some_field: 'target' }, { some_field: 'new_val' });
 
       // Non-matching doc should be unaffected
       await expect(c.$git.log()).resolves.toHaveLength(1);
     });
-    test('upsert', async () => {
-      const a = await model.create({ some_field: 'non_target' });
-      const res = await model.updateOne({ some_field: 'target' }, { some_field: 'new_val' }, { upsert: true });
+    test('upsert', async ({ expect, Model }) => {
+      const a = await Model.create({ some_field: 'non_target' });
+      const res = await Model.updateOne({ some_field: 'target' }, { some_field: 'new_val' }, { upsert: true });
 
       // Non-matching doc should be unaffected
       await expect(a.$git.log()).resolves.toHaveLength(1);
 
       // Validate upserted document has its commits
-      const b = await model.findById(res.upsertedId).orFail();
+      const b = await Model.findById(res.upsertedId).orFail();
       const bLog = await b.$git.log();
       expect(bLog).toHaveLength(1);
       expect(bLog[0].patch).toMatchObject({
@@ -104,11 +122,11 @@ describe('Model', () => {
     });
   });
   describe('.updateMany', () => {
-    test('existing doc', async () => {
-      const a = await model.create({ some_field: 'target' });
-      const b = await model.create({ some_field: 'target' });
-      const c = await model.create({ some_field: 'non_target' });
-      await model.updateMany({ some_field: 'target' }, { some_field: 'new_val' });
+    test('existing doc', async ({ expect, Model }) => {
+      const a = await Model.create({ some_field: 'target' });
+      const b = await Model.create({ some_field: 'target' });
+      const c = await Model.create({ some_field: 'non_target' });
+      await Model.updateMany({ some_field: 'target' }, { some_field: 'new_val' });
 
       // Matched documents should have new log entry
       await expect(a.$git.log()).resolves.toHaveLength(2);
@@ -116,9 +134,9 @@ describe('Model', () => {
       // Non-matching doc should be unaffected
       await expect(c.$git.log()).resolves.toHaveLength(1);
     });
-    test('upsert', async () => {
-      const a = await model.create({ some_field: 'non_target' });
-      const { upsertedId } = await model.updateMany(
+    test('upsert', async ({ expect, Model }) => {
+      const a = await Model.create({ some_field: 'non_target' });
+      const { upsertedId } = await Model.updateMany(
         { some_field: 'target' },
         { some_field: 'new_val' },
         { upsert: true }
@@ -126,7 +144,7 @@ describe('Model', () => {
 
       await expect(a.$git.log()).resolves.toHaveLength(1);
 
-      const b = await model.findById(upsertedId).orFail();
+      const b = await Model.findById(upsertedId).orFail();
       const bLog = await b.$git.log();
       expect(bLog).toHaveLength(1);
       expect(bLog[0].patch).toMatchObject({
@@ -136,11 +154,11 @@ describe('Model', () => {
     });
   });
   describe('.deleteOne', () => {
-    test('existing doc', async () => {
-      const a = await model.create({ some_field: 'target' });
-      const b = await model.create({ some_field: 'target' });
-      const c = await model.create({ some_field: 'non_target' });
-      await model.deleteOne({ some_field: 'target' });
+    test('existing doc', async ({ expect, Model }) => {
+      const a = await Model.create({ some_field: 'target' });
+      const b = await Model.create({ some_field: 'target' });
+      const c = await Model.create({ some_field: 'non_target' });
+      await Model.deleteOne({ some_field: 'target' });
 
       // We only update the first match
       await expect(a.$git.log()).resolves.toHaveLength(2);
@@ -149,20 +167,20 @@ describe('Model', () => {
       // Non-matching doc should be unaffected
       await expect(c.$git.log()).resolves.toHaveLength(1);
     });
-    test('non existing doc', async () => {
-      const c = await model.create({ some_field: 'non_target' });
-      await model.deleteOne({ some_field: 'target' });
+    test('non existing doc', async ({ expect, Model }) => {
+      const c = await Model.create({ some_field: 'non_target' });
+      await Model.deleteOne({ some_field: 'target' });
 
       // Non-matching doc should be unaffected
       await expect(c.$git.log()).resolves.toHaveLength(1);
     });
   });
   describe('.deleteMany', () => {
-    test('existing doc', async () => {
-      const a = await model.create({ some_field: 'target' });
-      const b = await model.create({ some_field: 'target' });
-      const c = await model.create({ some_field: 'non_target' });
-      await model.deleteMany({ some_field: 'target' });
+    test('existing doc', async ({ expect, Model }) => {
+      const a = await Model.create({ some_field: 'target' });
+      const b = await Model.create({ some_field: 'target' });
+      const c = await Model.create({ some_field: 'non_target' });
+      await Model.deleteMany({ some_field: 'target' });
 
       // Matched documents should have new log entry
       await expect(a.$git.log()).resolves.toHaveLength(2);
@@ -172,11 +190,11 @@ describe('Model', () => {
     });
   });
   describe('.findOneAndUpdate', () => {
-    test('existing doc', async () => {
-      const a = await model.create({ some_field: 'target' });
-      const b = await model.create({ some_field: 'target' });
-      const c = await model.create({ some_field: 'non_target' });
-      await model.findOneAndUpdate({ some_field: 'target' }, { some_field: 'new_val' });
+    test('existing doc', async ({ expect, Model }) => {
+      const a = await Model.create({ some_field: 'target' });
+      const b = await Model.create({ some_field: 'target' });
+      const c = await Model.create({ some_field: 'non_target' });
+      await Model.findOneAndUpdate({ some_field: 'target' }, { some_field: 'new_val' });
 
       // We only update the first match
       await expect(a.$git.log()).resolves.toHaveLength(2);
@@ -185,9 +203,9 @@ describe('Model', () => {
       // Non-matching doc should be unaffected
       await expect(c.$git.log()).resolves.toHaveLength(1);
     });
-    test('upsert', async () => {
-      const a = await model.create({ some_field: 'non_target' });
-      const b = await model.findOneAndUpdate(
+    test('upsert', async ({ expect, Model }) => {
+      const a = await Model.create({ some_field: 'non_target' });
+      const b = await Model.findOneAndUpdate(
         { some_field: 'target' },
         { some_field: 'new_val' },
         { upsert: true, new: true }
@@ -204,30 +222,30 @@ describe('Model', () => {
         ops: [{ op: 'replace', path: '', value: { _id: b._id, some_field: 'new_val' } }],
       });
     });
-    test('upsert without new', async () => {
+    test('upsert without new', async ({ expect, Model }) => {
       await expect(
-        model.findOneAndUpdate({ some_field: 'target' }, { some_field: 'new_val' }, { upsert: true })
+        Model.findOneAndUpdate({ some_field: 'target' }, { some_field: 'new_val' }, { upsert: true })
       ).rejects.toThrow(GitError);
     });
-    test('without _id', async () => {
-      await model.create({ some_field: 'target' });
+    test('without _id', async ({ expect, Model }) => {
+      await Model.create({ some_field: 'target' });
       await expect(
-        model.findOneAndUpdate({ some_field: 'target' }, { some_field: 'new_val' }, { projection: '-_id' })
+        Model.findOneAndUpdate({ some_field: 'target' }, { some_field: 'new_val' }, { projection: '-_id' })
       ).rejects.toThrow(GitError);
       await expect(
-        model.findOneAndUpdate({ some_field: 'target' }, { some_field: 'new_val' }, { projection: { _id: 0 } })
+        Model.findOneAndUpdate({ some_field: 'target' }, { some_field: 'new_val' }, { projection: { _id: 0 } })
       ).rejects.toThrow(GitError);
       await expect(
-        model.findOneAndUpdate({ some_field: 'target' }, { some_field: 'new_val' }, { projection: { _id: false } })
+        Model.findOneAndUpdate({ some_field: 'target' }, { some_field: 'new_val' }, { projection: { _id: false } })
       ).rejects.toThrow(GitError);
     });
   });
   describe('.findOneAndDelete', () => {
-    test('existing doc', async () => {
-      const a = await model.create({ some_field: 'target' });
-      const b = await model.create({ some_field: 'target' });
-      const c = await model.create({ some_field: 'non_target' });
-      await model.findOneAndDelete({ some_field: 'target' });
+    test('existing doc', async ({ expect, Model }) => {
+      const a = await Model.create({ some_field: 'target' });
+      const b = await Model.create({ some_field: 'target' });
+      const c = await Model.create({ some_field: 'non_target' });
+      await Model.findOneAndDelete({ some_field: 'target' });
 
       // We only update the first match
       await expect(a.$git.log()).resolves.toHaveLength(2);
@@ -236,17 +254,17 @@ describe('Model', () => {
       // Non-matching doc should be unaffected
       await expect(c.$git.log()).resolves.toHaveLength(1);
     });
-    test('non existing doc', async () => {
-      const c = await model.create({ some_field: 'non_target' });
-      await model.findOneAndDelete({ some_field: 'target' });
+    test('non existing doc', async ({ expect, Model }) => {
+      const c = await Model.create({ some_field: 'non_target' });
+      await Model.findOneAndDelete({ some_field: 'target' });
 
       // Non-matching doc should be unaffected
       await expect(c.$git.log()).resolves.toHaveLength(1);
     });
   });
   describe('.findOneAndReplace', () => {
-    test('existing doc', async () => {
-      const model = getModel(
+    test('existing doc', async ({ expect }) => {
+      const Model = getModel(
         new Schema(
           {
             some_field: String,
@@ -255,10 +273,10 @@ describe('Model', () => {
           { versionKey: false }
         )
       );
-      const a = await model.create({ some_field: 'target', some_other_field: 'test' });
-      const b = await model.create({ some_field: 'target' });
-      const c = await model.create({ some_field: 'non_target' });
-      await model.findOneAndReplace({ some_field: 'target' }, { some_field: 'new_val' });
+      const a = await Model.create({ some_field: 'target', some_other_field: 'test' });
+      const b = await Model.create({ some_field: 'target' });
+      const c = await Model.create({ some_field: 'non_target' });
+      await Model.findOneAndReplace({ some_field: 'target' }, { some_field: 'new_val' });
 
       // We only update the first match
       const aLog = await a.$git.log();
@@ -282,10 +300,11 @@ describe('Model', () => {
       await expect(b.$git.log()).resolves.toHaveLength(1);
       // Non-matching doc should be unaffected
       await expect(c.$git.log()).resolves.toHaveLength(1);
+      mongoose.deleteModel(Model.modelName).deleteModel(Model.$git()._model.modelName);
     });
-    test('upsert', async () => {
-      const a = await model.create({ some_field: 'non_target' });
-      const b = await model.findOneAndReplace(
+    test('upsert', async ({ expect, Model }) => {
+      const a = await Model.create({ some_field: 'non_target' });
+      const b = await Model.findOneAndReplace(
         { some_field: 'target' },
         { some_field: 'new_val' },
         { upsert: true, new: true }
@@ -302,21 +321,21 @@ describe('Model', () => {
         ops: [{ op: 'replace', path: '', value: { _id: b._id, some_field: 'new_val' } }],
       });
     });
-    test('upsert without new', async () => {
+    test('upsert without new', async ({ expect, Model }) => {
       await expect(
-        model.findOneAndReplace({ some_field: 'target' }, { some_field: 'new_val' }, { upsert: true })
+        Model.findOneAndReplace({ some_field: 'target' }, { some_field: 'new_val' }, { upsert: true })
       ).rejects.toThrow(GitError);
     });
-    test('without _id', async () => {
-      await model.create({ some_field: 'target' });
+    test('without _id', async ({ expect, Model }) => {
+      await Model.create({ some_field: 'target' });
       await expect(
-        model.findOneAndReplace({ some_field: 'target' }, { some_field: 'new_val' }, { projection: '-_id' })
+        Model.findOneAndReplace({ some_field: 'target' }, { some_field: 'new_val' }, { projection: '-_id' })
       ).rejects.toThrow(GitError);
       await expect(
-        model.findOneAndReplace({ some_field: 'target' }, { some_field: 'new_val' }, { projection: { _id: 0 } })
+        Model.findOneAndReplace({ some_field: 'target' }, { some_field: 'new_val' }, { projection: { _id: 0 } })
       ).rejects.toThrow(GitError);
       await expect(
-        model.findOneAndReplace({ some_field: 'target' }, { some_field: 'new_val' }, { projection: { _id: false } })
+        Model.findOneAndReplace({ some_field: 'target' }, { some_field: 'new_val' }, { projection: { _id: false } })
       ).rejects.toThrow(GitError);
     });
   });
