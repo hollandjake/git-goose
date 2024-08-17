@@ -90,8 +90,7 @@ export function git<TargetDocType, TPatcherName extends PatcherName = GlobalPatc
     }
   >(['updateMany', 'deleteMany'], async function (res) {
     const git = (this.model as CommittableModel).$git();
-    // @ts-ignore Allow access to protected property
-    const session = await git.model.startSession();
+    const session = await git._model.startSession();
     await session.withTransaction(async () => {
       // @ts-ignore Allow access to protected property
       await Promise.all(this.$locals.affectedIds.map(id => git.withRefId(id).commit()));

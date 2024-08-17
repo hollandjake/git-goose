@@ -24,7 +24,7 @@ export abstract class GitBase<TargetDocType, TPatcherName extends PatcherName = 
   /** The configuration */
   protected readonly _conf?: Partial<GitConfig<TPatcherName>>;
   /** The Git Model */
-  protected readonly model: DBCommitModel<TargetDocType>;
+  public readonly _model: DBCommitModel<TargetDocType>;
   /** The internal Model that this git instance is bound to */
   protected readonly _referenceModel: Model<TargetDocType>;
 
@@ -36,7 +36,7 @@ export abstract class GitBase<TargetDocType, TPatcherName extends PatcherName = 
 
     this._conf = conf;
     this._referenceModel = referenceModel;
-    this.model = GitModel<TargetDocType>(conf);
+    this._model = GitModel<TargetDocType>(conf);
   }
 
   protected static staticConf<K extends keyof ContextualGitConfig>(
@@ -106,11 +106,11 @@ export abstract class GitBase<TargetDocType, TPatcherName extends PatcherName = 
     const patch = await this.createPatch(prev, curr);
     if (patch) {
       let snapshot;
-      if ((await this.model.countDocuments({ refId })) % this.conf('snapshotWindow') === 0) {
+      if ((await this._model.countDocuments({ refId })) % this.conf('snapshotWindow') === 0) {
         // Generate snapshot
         snapshot = curr;
       }
-      await this.model.create({ refId, patch, snapshot });
+      await this._model.create({ refId, patch, snapshot });
     }
   }
 
@@ -239,7 +239,7 @@ export abstract class GitBase<TargetDocType, TPatcherName extends PatcherName = 
     options?: QueryOptions<Commit> & { lean: true }
   ): Promise<Commit[]> {
     // Fetch commits for the target, applying and extra options
-    const commits = await this.model.find({ ...filter, refId }, projection, {
+    const commits = await this._model.find({ ...filter, refId }, projection, {
       sort: { _id: -1 },
       limit: 10,
       ...options,
@@ -278,7 +278,7 @@ export abstract class GitBase<TargetDocType, TPatcherName extends PatcherName = 
     }
 
     // Find the most recent snapshot commit before the target commit
-    const snapshotCommit = await this.model.findOne(
+    const snapshotCommit = await this._model.findOne(
       { refId, _id: { $lte: targetCommit._id }, snapshot: { $exists: true } },
       { _id: true, snapshot: true },
       { sort: { _id: -1 } }
@@ -288,7 +288,7 @@ export abstract class GitBase<TargetDocType, TPatcherName extends PatcherName = 
     let build = snapshotCommit?.snapshot ?? null;
 
     // apply any remaining transformations
-    for await (const t of this.model
+    for await (const t of this._model
       .find(
         {
           refId,
@@ -324,7 +324,7 @@ export abstract class GitBase<TargetDocType, TPatcherName extends PatcherName = 
     refId: RefId,
     date: Date
   ): Promise<Nullable<DBCommitDocument<TargetDocType>>> {
-    return this.model.findOne<DBCommitDocument<TargetDocType>>(
+    return this._model.findOne<DBCommitDocument<TargetDocType>>(
       { refId, date: { $lte: date } },
       {},
       { sort: { _id: -1 } }
@@ -341,7 +341,7 @@ export abstract class GitBase<TargetDocType, TPatcherName extends PatcherName = 
     refId: RefId,
     commit: Types.ObjectId
   ): Promise<Nullable<DBCommitDocument<TargetDocType>>> {
-    return this.model.findOne<DBCommitDocument<TargetDocType>>({ refId, _id: commit });
+    return this._model.findOne<DBCommitDocument<TargetDocType>>({ refId, _id: commit });
   }
 
   /**
@@ -357,7 +357,7 @@ export abstract class GitBase<TargetDocType, TPatcherName extends PatcherName = 
     refId: RefId,
     offset: number
   ): Promise<Nullable<DBCommitDocument<TargetDocType>>> {
-    return this.model.findOne<DBCommitDocument<TargetDocType>>(
+    return this._model.findOne<DBCommitDocument<TargetDocType>>(
       { refId },
       {},
       { sort: { _id: -1 }, skip: Math.abs(offset) }

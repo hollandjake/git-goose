@@ -18,26 +18,22 @@ describe('mongoose.plugin(git)', () => {
   test('creates correct collection on default', async () => {
     const Model = getModel();
     const a = await Model.create({ some_field: 'some_value' });
-    // @ts-ignore Allow access to protected property
-    expect(a.$git.model.collection.collectionName).toEqual('test.git');
+    expect(a.$git._model.collection.collectionName).toEqual('test.git');
   });
   test('creates correct collection with custom suffix', async () => {
     const Model = getModel(exampleSchema, { collectionSuffix: '-suffix' });
     const a = await Model.create({ some_field: 'some_value' });
-    // @ts-ignore Allow access to protected property
-    expect(a.$git.model.collection.collectionName).toEqual('test-suffix');
+    expect(a.$git._model.collection.collectionName).toEqual('test-suffix');
   });
   test('creates correct collection with custom collection name', async () => {
     const Model = getModel(exampleSchema, { collectionName: 'some_collection' });
     const a = await Model.create({ some_field: 'some_value' });
-    // @ts-ignore Allow access to protected property
-    expect(a.$git.model.collection.collectionName).toEqual('some_collection');
+    expect(a.$git._model.collection.collectionName).toEqual('some_collection');
   });
   test('creates correct collection with custom collection name and redundant suffix', async () => {
     const Model = getModel(exampleSchema, { collectionName: 'some_collection', collectionSuffix: 'some_suffix' });
     const a = await Model.create({ some_field: 'some_value' });
-    // @ts-ignore Allow access to protected property
-    expect(a.$git.model.collection.collectionName).toEqual('some_collection');
+    expect(a.$git._model.collection.collectionName).toEqual('some_collection');
   });
 });
 

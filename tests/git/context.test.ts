@@ -73,8 +73,7 @@ describe('checkout', () => {
       obj.some_field = '3';
       await obj.save();
 
-      // @ts-ignore Allow access to protected property
-      const latestSnapshot = await git(obj, globalGit).model.findOne(
+      const latestSnapshot = await git(obj, globalGit)._model.findOne(
         {
           refId: obj._id,
           snapshot: { $exists: true },
