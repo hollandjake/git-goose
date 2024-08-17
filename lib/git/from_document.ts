@@ -1,6 +1,7 @@
 import { Require_id } from 'mongoose';
 import { ContextualGitConfig } from '../config';
 import { HEAD } from '../consts';
+import { getModelFromDoc } from '../mongoose-utils';
 import { CommitRef, type CommittableDocument, Patch, PatcherName } from '../types';
 import { GitBase } from './base';
 import { GitWithContext } from './context';
@@ -19,11 +20,14 @@ export class GitFromDocument<TargetDocType, TPatcherName extends PatcherName> ex
 
   constructor(doc: CommittableDocument<TargetDocType>, conf?: Partial<ContextualGitConfig<TPatcherName>>) {
     if (!conf) conf = {};
-    conf.collectionName =
-      conf.collectionName ?? doc.collection.collectionName + GitBase.staticConf('collectionSuffix', conf);
-    conf.connection = conf.connection ?? doc.db;
 
-    super(doc.model(), conf);
+    const model = getModelFromDoc(doc);
+
+    conf.collectionName =
+      conf.collectionName ?? model.collection.collectionName + GitBase.staticConf('collectionSuffix', conf);
+    conf.connection = conf.connection ?? model.db;
+
+    super(model, conf);
     this.doc = doc;
   }
 
@@ -39,7 +43,7 @@ export class GitFromDocument<TargetDocType, TPatcherName extends PatcherName> ex
   public async checkout(commit: CommitRef) {
     const targetCommit = await super.checkout(commit);
 
-    return this.doc.model().hydrate(targetCommit);
+    return this._referenceModel.hydrate(targetCommit);
   }
 
   /**
