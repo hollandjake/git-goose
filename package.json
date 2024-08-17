@@ -1,6 +1,6 @@
 {
   "name": "git-goose",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "a mongoose plugin that enables git like change tracking",
   "license": "MIT",
   "author": "Jake Holland <contact@hollandjake.com>",
