@@ -1,5 +1,17 @@
 # git-goose
 
+## [0.4.0](https://github.com/hollandjake/git-goose/compare/v0.3.0...v0.4.0) (2024-08-17)
+
+
+### Features
+
+* expose git model publicly ([3d735db](https://github.com/hollandjake/git-goose/commit/3d735dbcebd46c25c3874f9a077cf240e73af664))
+
+
+### Bug Fixes
+
+* allow mongoose defined methods as fields ([253a913](https://github.com/hollandjake/git-goose/commit/253a91396891d6710942c9ec6f329b031af54942)), closes [#21](https://github.com/hollandjake/git-goose/issues/21)
+
 ## [0.3.0](https://github.com/hollandjake/git-goose/compare/v0.2.0...v0.3.0) (2024-08-16)
 
 
