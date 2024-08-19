@@ -1,5 +1,12 @@
 # git-goose
 
+## [0.4.1](https://github.com/hollandjake/git-goose/compare/v0.4.0...v0.4.1) (2024-08-19)
+
+
+### Bug Fixes
+
+* **rfc6902:** fix date type handling ([8f8ed11](https://github.com/hollandjake/git-goose/commit/8f8ed1163d31ed00c8e9dae719aa5d1d36287a0a))
+
 ## [0.4.0](https://github.com/hollandjake/git-goose/compare/v0.3.0...v0.4.0) (2024-08-17)
 
 
