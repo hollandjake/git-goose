@@ -185,5 +185,19 @@ test.concurrent('issues/76', () => {
 test.concurrent('issues/78', () => {
   const user = { firstName: 'Chris' };
   applyPatch(user, [{ op: 'add', path: '/createdAt', value: new Date('2010-08-10T22:10:48Z') }]);
-  expect((user['createdAt' as never] as Date).getTime(), 'should add Date recoverably').toEqual(1281478248000);
+  expect(user['createdAt' as never], 'should add Date recoverably').toEqual(new Date('2010-08-10T22:10:48Z'));
+});
+
+test.concurrent('issues/78-create', () => {
+  const userA = { firstName: 'Chris', createdAt: new Date(2010, 7, 10, 22, 10, 48) };
+  const userB = { firstName: 'Chris', createdAt: new Date(2011, 7, 10, 22, 10, 48) };
+  expect(createPatch(userA, userB)).toEqual([
+    {
+      op: 'replace',
+      path: '/createdAt',
+      value: new Date(2011, 7, 10, 22, 10, 48),
+    },
+  ]);
+
+  expect(createPatch(userA, userA)).toEqual([]);
 });

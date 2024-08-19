@@ -12,5 +12,8 @@ export function objectType(object: any) {
   if (Array.isArray(object)) {
     return 'array';
   }
+  if (object instanceof Date) {
+    return 'date';
+  }
   return typeof object;
 }

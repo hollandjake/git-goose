@@ -284,8 +284,7 @@ export function diffArrays<T>(input: T[], output: T[], ptr: Pointer, diff: Diff 
         // the meat of the algorithm:
         // sort by cost to find the lowest one (might be several ties for lowest)
         // [4, 6, 7, 1, 2].sort((a, b) => a - b) -> [ 1, 2, 4, 6, 7 ]
-        const best = alternatives.sort((a, b) => a.cost - b.cost)[0];
-        memoized = best;
+        memoized = alternatives.sort((a, b) => a.cost - b.cost)[0];
       }
       memo[memo_key] = memoized;
     }
@@ -380,6 +379,10 @@ export function diffAny(input: any, output: any, ptr: Pointer, diff: Diff = diff
   }
   if (input_type === 'object' && output_type === 'object') {
     return diffObjects(input, output, ptr, diff);
+  }
+
+  if (input_type === 'date' && output_type === 'date') {
+    if (input.getTime() === output.getTime()) return [];
   }
   // at this point we know that input and output are materially different;
   // could be array -> object, object -> array, boolean -> undefined,
