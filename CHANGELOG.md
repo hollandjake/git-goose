@@ -1,5 +1,12 @@
 # git-goose
 
+## [0.5.0](https://github.com/hollandjake/git-goose/compare/v0.4.1...v0.5.0) (2024-09-09)
+
+
+### Features
+
+* **rfc6902:** move to custom rfc6902 package ([05e44b9](https://github.com/hollandjake/git-goose/commit/05e44b98316faa6bfdf67c68bb63203ff082f60f))
+
 ## [0.4.1](https://github.com/hollandjake/git-goose/compare/v0.4.0...v0.4.1) (2024-08-19)
 
 
