@@ -1,11 +1,11 @@
-import mongoose, { type Connection } from 'mongoose';
+import { type Connection } from 'mongoose';
 import { GitError } from './errors';
 import { mini_rfc6902, rfc6902 } from './patchers';
 import { Patcher, PatcherName, PatchType } from './types';
 
 export interface ModelOptions {
   /** Mongoose connection to use for queries */
-  connection: Connection;
+  connection?: Connection;
   /** Collection name to use for all commits */
   collectionName?: string;
 }
@@ -23,18 +23,12 @@ export interface ContextualGitConfig<TPatcherName extends PatcherName = PatcherN
 }
 
 export const GitGlobalConfig: ContextualGitConfig = {
-  connection: mongoose.connection,
   collectionSuffix: '.git',
   snapshotWindow: 100,
   patcher: 'mini-json-patch',
 };
 
-export const RequiredConfig: (keyof ContextualGitConfig)[] = [
-  'connection',
-  'collectionSuffix',
-  'patcher',
-  'snapshotWindow',
-];
+export const RequiredConfig: (keyof ContextualGitConfig)[] = ['collectionSuffix', 'patcher', 'snapshotWindow'];
 
 export const Patchers = {
   'json-patch': <Patcher<ReturnType<typeof rfc6902.create>>>{

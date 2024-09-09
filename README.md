@@ -1,25 +1,40 @@
-# git-goose
-
 [![npm package](https://img.shields.io/npm/v/git-goose.svg)](https://www.npmjs.com/package/git-goose)
 [![documentation](https://img.shields.io/badge/documentation-yes-brightgreen.svg) ](https://github.com/hollandjake/git-goose/blob/main/README.md)
 [![licence](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/hollandjake/git-goose/blob/main/LICENSE)
 
-A mongoose plugin that enables git like change tracking
-with CommonJS, ESM, and TypeScript support
+# git-goose
 
-## 🛠 Installation
+> A mongoose plugin that enables git like change tracking
+> with CommonJS, ESM, and TypeScript support
+
+## Installation
 
 ```sh
 npm install git-goose
 ```
 
-### Javascript Version
+### Import into your script
 
 Supports both CommonJS and ESM
 
 ```js
-const mongoose = require("mongoose");
 const git = require("git-goose");
+```
+
+or
+
+```js
+import git from "git-goose";
+// or import { git } from "git-goose";
+```
+
+## Usage
+
+### With JavaScript
+
+```js
+import { mongoose } from "mongoose";
+import git from "git-goose";
 
 const YourSchema = new mongoose.Schema({
   firstName: String,
@@ -34,7 +49,7 @@ const YourModel = mongoose.model("Test", YourSchema, "tests");
 /* Then use your model however you would normally */
 ```
 
-### Typescript Version
+### With Typescript
 
 ```ts
 import mongoose from 'mongoose';
@@ -54,15 +69,69 @@ const YourModel = committable(mongoose.model("Test", YourSchema, "tests"));
 /* Then use your model however you would normally */
 ```
 
-## 🔬 How it works
+## API
+
+### Config
+
+```
+YourSchema.plugin(git, conf?: ContextualGitConfig);
+```
+
+<details>
+<summary>Optional <code>ContextualGitConfig</code> argument</summary>
+
+#### `opts.connection?: Mongoose.Connection`
+
+Override the connection used to store the model history.
+By default, we use the connection that is bound to the model, this is done on a per-model basis.
+So all models are handled as you would expect
+
+#### `opts.collectionName?: string`
+
+By default, we generate a collection per model using the logic `${model.name}${opts.collectionSuffix}`,
+this means each models history is stored in a separate collection (effectively treating a model as a repository).
+
+You can override this collectionName forcing all histories to be saved into a singular collection
+
+#### `opts.collectionSuffix: string`
+
+Override the suffix used to generate collection names.
+By default, this is is `.git`
+
+If you want to override the entire collection name, please see [`opts.collectionName`](#optscollectionname-string)
+
+#### `opts.patcher: string | Patcher`
+
+Override the default patcher to use for generating patches.
+
+By default, we use `mini-json-patch` which is a minified version
+of [RFC6902](https://datatracker.ietf.org/doc/html/rfc6902).
+We also have support for `json-patch` which is the full size version
+of [RFC6902](https://datatracker.ietf.org/doc/html/rfc6902)
+
+You can also provide a [Custom Patcher](#custom-patcher)
+
+> [!NOTE]
+> This does not break any existing patches, it just changes how we store new patches and compute `diff(X, Y)`
+
+#### `opts.snapshotWindow: number`
+
+Override the default snapshot window, used as a performance optimisation to stop having to trawl back through thousands
+of commits to build the current state.
+
+To disable snapshotting, set this to `-1`
+
+By default, we use `100`
+
+</details>
+
+### Supports
 
 Whenever an instance is created or updated it will save the changes to a new mongo collection containing the commit
 log. So from a normal users perspective they can keep doing what they would normally do!
 
 > By default, a new collection is created per collection the plugin is loaded on, however this can be configured if
 > you wish to have all the logs for all collections in a single collection
-
-### Supports
 
 #### Creation
 
@@ -201,6 +270,7 @@ const snapshot = await instance.$git.checkout("2024-08-15T15:39:49.436Z")
 As with checkout, all arguments support all types of commit references.
 
 **Compare against HEAD**
+
 ```ts
 const diff = await instance.$git.diff(1)
 /*
@@ -234,20 +304,49 @@ const diff = await instance.$git.diff(3, 1);
 */
 ```
 
-## 🏠 Homepage
+### Custom Patcher
+
+If you want to define your own patcher you can define one as such
+
+```ts
+import {Patchers} from "git-goose";
+
+Patchers["custom"] = <Patcher<TPatchType, DocType>>{
+  create(committed: Nullable<DocType>, active: Nullable<DocType>): TPatchType | Promise<TPatchType> {},
+  apply(target: Nullable<DocType>, patch: TPatchType): Nullable<DocType> {},
+}
+```
+
+you can then use this custom patcher in your config
+
+```ts
+YourSchema.plugin(git, {patcher: "custom"});
+```
+
+or globally
+```ts
+import { GitGlobalConfig } from "./config";
+
+GitGlobalConfig["patcher"] = "custom"
+```
+
+## Homepage
 
 You can find more about this on [GitHub](https://github.com/hollandjake/git-goose).
 
-## 🖋️ Contributing
+## Contributing
 
 Contributions, issues and feature requests are welcome!
 
 Feel free to check [issues page](https://github.com/hollandjake/git-goose/issues).
 
-## 🤝 Show your support
+## Authors
 
-Give a ⭐ if this package helped you!
+* **[Jake Holland](https://github.com/hollandjake)**
 
-## 📜 License
+See also the list of [contributors](https://github.com/hollandjake/git-goose/contributors) who participated in this
+project.
+
+## License
 
 This project is [MIT](https://github.com/hollandjake/git-goose/blob/main/LICENSE) licensed.

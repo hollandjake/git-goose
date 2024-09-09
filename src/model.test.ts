@@ -69,12 +69,13 @@ describe.concurrent('GitModel', () => {
   });
   test('from provided config', ({ GitGlobalConfig, expect }) => {
     mocks.GitGlobalConfig.mockReturnValue(GitGlobalConfig);
-    const model = GitModel({ collectionName: 'GitModel-scopedCollectionName' });
+    const model = GitModel({ connection: mongoose.connection, collectionName: 'GitModel-scopedCollectionName' });
     expect(model.collection.collectionName).toEqual('GitModel-scopedCollectionName');
   });
   test('when model already exists', ({ GitGlobalConfig, expect }) => {
     mocks.GitGlobalConfig.mockReturnValue({
       ...GitGlobalConfig,
+      connection: mongoose.connection,
       collectionName: 'GitModel-existingModel',
     });
     expect(GitModel()).toBe(GitModel());

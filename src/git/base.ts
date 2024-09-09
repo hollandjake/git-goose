@@ -11,7 +11,7 @@ import mongoose, {
 import { ContextualGitConfig, getPatcher, GitConfig, GitGlobalConfig, RequiredConfig } from '../config';
 import { GitError } from '../errors';
 import { GitModel } from '../model';
-import { DBCommitDocument, DBCommitModel } from '../schemas';
+import { DBCommit, DBCommitDocument, DBCommitModel } from '../schemas';
 import { Commit, CommitRef, GlobalPatcherName, Nullable, Patch, PatcherName, RefId } from '../types';
 
 /**
@@ -106,7 +106,8 @@ export abstract class GitBase<TargetDocType, TPatcherName extends PatcherName = 
     const patch = await this.createPatch(prev, curr);
     if (patch) {
       let snapshot;
-      if ((await this._model.countDocuments({ refId })) % this.conf('snapshotWindow') === 0) {
+      const snapshotWindow = this.conf('snapshotWindow');
+      if (snapshotWindow > 0 && (await this._model.countDocuments({ refId })) % snapshotWindow === 0) {
         // Generate snapshot
         snapshot = curr;
       }
@@ -239,11 +240,11 @@ export abstract class GitBase<TargetDocType, TPatcherName extends PatcherName = 
     options?: QueryOptions<Commit> & { lean: true }
   ): Promise<Commit[]> {
     // Fetch commits for the target, applying and extra options
-    const commits = await this._model.find({ ...filter, refId }, projection, {
+    const commits = (await this._model.find({ ...filter, refId }, projection, {
       sort: { _id: -1 },
       limit: 10,
       ...options,
-    });
+    })) as unknown as Document<unknown, {}, DBCommit>[];
 
     // Remove disallowed fields
     return commits.map(c => c.toObject()).map(({ refId: _target, snapshot: _snapshot, ...o }) => o);
