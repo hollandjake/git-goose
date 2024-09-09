@@ -1,5 +1,12 @@
 # git-goose
 
+## [0.5.1](https://github.com/hollandjake/git-goose/compare/v0.5.0...v0.5.1) (2024-09-09)
+
+
+### Bug Fixes
+
+* remove default connection using mongoose ([fbab090](https://github.com/hollandjake/git-goose/commit/fbab090a77ca10c440cd54760a9e873a9c05a760))
+
 ## [0.5.0](https://github.com/hollandjake/git-goose/compare/v0.4.1...v0.5.0) (2024-09-09)
 
 
