@@ -1,8 +1,8 @@
 import mongoose from 'mongoose';
 import { beforeEach, describe, test } from 'vitest';
-import { GitError } from '../../lib/errors';
-import { ExampleSchemaType, getModel, SchemaToCommittableModel } from '../utils';
-import '../withDB';
+import { ExampleSchemaType, getModel, SchemaToCommittableModel } from '../../tests/utils';
+import '../../tests/withDB';
+import { GitError } from '../errors';
 
 declare module 'vitest' {
   export interface TestContext {

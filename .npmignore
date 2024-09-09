@@ -1,1 +1,6 @@
+.*
+vite.config.ts
+
 tests
+*.test.ts
+coverage

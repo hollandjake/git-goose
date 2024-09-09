@@ -1,12 +1,10 @@
-/* eslint @typescript-eslint/no-explicit-any: 0 */
-
 import mongoose, { Types } from 'mongoose';
 import { beforeEach, describe, test, vi } from 'vitest';
-import { GitError } from '../../lib/errors';
-import { GitDetached } from '../../lib/git';
-import { CommittableDocument } from '../../lib/types';
-import { exampleSchema, ExampleSchemaType, getModel, SchemaToCommittableModel } from '../utils';
-import '../withDB';
+import { exampleSchema, ExampleSchemaType, getModel, SchemaToCommittableModel } from '../../tests/utils';
+import '../../tests/withDB';
+import { GitError } from '../errors';
+import { GitDetached } from '../git';
+import { CommittableDocument } from '../types';
 
 declare module 'vitest' {
   export interface TestContext {
@@ -16,7 +14,7 @@ declare module 'vitest' {
 }
 
 beforeEach(ctx => {
-  const Model = getModel({ patcher: 'json-patch' });
+  const Model = getModel({ patcher: 'mini-json-patch' });
   const globalGit = Model.$git();
 
   ctx.Model = Model;
@@ -89,7 +87,7 @@ describe('checkout', () => {
   });
   describe.concurrent('from commit id', () => {
     beforeEach(ctx => {
-      ctx.Model = getModel(exampleSchema, { snapshotWindow: 2, patcher: 'json-patch' });
+      ctx.Model = getModel(exampleSchema, { snapshotWindow: 2, patcher: 'mini-json-patch' });
       ctx.globalGit = ctx.Model.$git();
 
       return () => {
@@ -166,13 +164,13 @@ describe.concurrent('diff', () => {
     obj.some_field = 'some_other_value';
 
     await expect(obj.$git.diff()).resolves.toEqual({
-      type: 'json-patch',
-      ops: [{ op: 'replace', path: '/some_field', value: 'some_other_value' }],
+      type: 'mini-json-patch',
+      ops: [['~', '/some_field', 'some_other_value']],
     });
 
     // Global Git it not aware of uncommitted changes, it effectively acts as the remote server
     await expect(globalGit.withRefId(obj._id).diff()).resolves.toEqual({
-      type: 'json-patch',
+      type: 'mini-json-patch',
       ops: null,
     });
   });
@@ -183,12 +181,12 @@ describe.concurrent('diff', () => {
       await obj.save();
 
       await expect(git(obj, globalGit).diff(-1)).resolves.toEqual({
-        type: 'json-patch',
-        ops: [{ op: 'replace', path: '/some_field', value: 'some_other_value' }],
+        type: 'mini-json-patch',
+        ops: [['~', '/some_field', 'some_other_value']],
       });
       await expect(git(obj, globalGit).diff('HEAD^1')).resolves.toEqual({
-        type: 'json-patch',
-        ops: [{ op: 'replace', path: '/some_field', value: 'some_other_value' }],
+        type: 'mini-json-patch',
+        ops: [['~', '/some_field', 'some_other_value']],
       });
     });
   });
@@ -201,8 +199,8 @@ describe.concurrent('diff', () => {
       await obj.save();
 
       await expect(git(obj, globalGit).diff(-2)).resolves.toEqual({
-        type: 'json-patch',
-        ops: [{ op: 'replace', path: '/some_field', value: '3' }],
+        type: 'mini-json-patch',
+        ops: [['~', '/some_field', '3']],
       });
     });
   });
@@ -215,8 +213,8 @@ describe.concurrent('diff', () => {
       await obj.save();
 
       await expect(git(obj, globalGit).diff(-2, -1)).resolves.toEqual({
-        type: 'json-patch',
-        ops: [{ op: 'replace', path: '/some_field', value: '2' }],
+        type: 'mini-json-patch',
+        ops: [['~', '/some_field', '2']],
       });
     });
   });
@@ -236,14 +234,8 @@ describe.concurrent('log', () => {
 
       expect(log).toHaveLength(1);
       expect(log[0].patch).toMatchObject({
-        type: 'json-patch',
-        ops: [
-          {
-            op: 'replace',
-            path: '',
-            value: { some_field: 'some_value', _id: obj._id },
-          },
-        ],
+        type: 'mini-json-patch',
+        ops: [['~', '', { some_field: 'some_value', _id: obj._id }]],
       });
     });
   });
@@ -257,14 +249,8 @@ describe.concurrent('log', () => {
 
       expect(log).toHaveLength(2);
       expect(log[0].patch).toMatchObject({
-        type: 'json-patch',
-        ops: [
-          {
-            op: 'replace',
-            path: '/some_field',
-            value: 'some_other_value',
-          },
-        ],
+        type: 'mini-json-patch',
+        ops: [['~', '/some_field', 'some_other_value']],
       });
     });
   });
@@ -274,30 +260,24 @@ describe.concurrent('status', () => {
   test('new doc', async ({ Model, globalGit, expect }) => {
     const obj = new Model({ some_field: 'some_value' });
     await expect(obj.$git.status()).resolves.toEqual({
-      type: 'json-patch',
-      ops: [
-        {
-          op: 'replace',
-          path: '',
-          value: { some_field: 'some_value', _id: obj._id },
-        },
-      ],
+      type: 'mini-json-patch',
+      ops: [['~', '', { some_field: 'some_value', _id: obj._id }]],
     });
     // At this point the doc has not been committed to the db so there is no commits available
-    await expect(globalGit.withRefId(obj._id).status()).resolves.toEqual({ type: 'json-patch', ops: null });
+    await expect(globalGit.withRefId(obj._id).status()).resolves.toEqual({ type: 'mini-json-patch', ops: null });
   });
   test('after save', async ({ Model, globalGit, expect }) => {
     const obj = await Model.create({ some_field: 'some_value' });
-    await expect(obj.$git.status()).resolves.toEqual({ type: 'json-patch', ops: null });
-    await expect(globalGit.withRefId(obj._id).status()).resolves.toEqual({ type: 'json-patch', ops: null });
+    await expect(obj.$git.status()).resolves.toEqual({ type: 'mini-json-patch', ops: null });
+    await expect(globalGit.withRefId(obj._id).status()).resolves.toEqual({ type: 'mini-json-patch', ops: null });
   });
   test('before update', async ({ Model, globalGit, expect }) => {
     const obj = await Model.create({ some_field: 'some_value' });
     obj.some_field = 'some_other_value';
     await expect(obj.$git.status()).resolves.toEqual({
-      type: 'json-patch',
-      ops: [{ path: '/some_field', op: 'replace', value: 'some_other_value' }],
+      type: 'mini-json-patch',
+      ops: [['~', '/some_field', 'some_other_value']],
     });
-    await expect(globalGit.withRefId(obj._id).status()).resolves.toEqual({ type: 'json-patch', ops: null });
+    await expect(globalGit.withRefId(obj._id).status()).resolves.toEqual({ type: 'mini-json-patch', ops: null });
   });
 });

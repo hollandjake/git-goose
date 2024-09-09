@@ -10,6 +10,27 @@
         "varsIgnorePattern": "^_"
       }
     ],
-    "@typescript-eslint/no-empty-interface": "off"
-  }
+    "@typescript-eslint/no-empty-interface": "off",
+    "n/no-unpublished-import": [
+      "error",
+      {
+        "allowModules": ["vite-plugin-dts", "vitest", "vite-plugin-node-polyfills"]
+      }
+    ],
+
+    "@typescript-eslint/ban-ts-comment": [
+      "error",
+      {
+        "ts-ignore": "allow-with-description"
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.ts", "**/tests/**", "src/plugin.ts"],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off"
+      }
+    }
+  ]
 }

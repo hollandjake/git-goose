@@ -6,9 +6,9 @@
     "module": "ES6",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "declarationMap": true,
-    "skipLibCheck": true,
+    "declarationMap": false,
+    "skipLibCheck": true
   },
   "extends": "./node_modules/gts/tsconfig-google.json",
-  "include": ["index.ts"]
+  "include": ["src"]
 }

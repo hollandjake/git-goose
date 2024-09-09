@@ -1,8 +1,6 @@
 import { randomUUID } from 'crypto';
 import mongoose, { Connection, HydratedDocument, InferSchemaType, Model, ObtainSchemaGeneric, Schema } from 'mongoose';
-import { ContextualGitConfig } from '../lib/config';
-import { committable, git } from '../lib/plugin';
-import { CommittableModel } from '../lib/types';
+import { committable, CommittableModel, ContextualGitConfig, git } from '../src';
 
 export const exampleSchema = new Schema(
   {

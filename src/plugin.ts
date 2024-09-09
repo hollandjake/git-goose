@@ -1,6 +1,3 @@
-/* eslint @typescript-eslint/ban-ts-comment: 0 */
-/* eslint @typescript-eslint/no-explicit-any: 0 */
-
 import { Model, Query, type Schema } from 'mongoose';
 import { ContextualGitConfig } from './config';
 import { GIT, HEAD } from './consts';

@@ -1,6 +1,6 @@
 import mongoose, { type Connection } from 'mongoose';
 import { GitError } from './errors';
-import { rfc6902 } from './patchers';
+import { mini_rfc6902, rfc6902 } from './patchers';
 import { Patcher, PatcherName, PatchType } from './types';
 
 export interface ModelOptions {
@@ -26,7 +26,7 @@ export const GitGlobalConfig: ContextualGitConfig = {
   connection: mongoose.connection,
   collectionSuffix: '.git',
   snapshotWindow: 100,
-  patcher: 'json-patch',
+  patcher: 'mini-json-patch',
 };
 
 export const RequiredConfig: (keyof ContextualGitConfig)[] = [
@@ -37,16 +37,13 @@ export const RequiredConfig: (keyof ContextualGitConfig)[] = [
 ];
 
 export const Patchers = {
-  'json-patch': <Patcher<rfc6902.Patch, object>>{
-    create(input, output) {
-      const patch = rfc6902.createPatch(input, output);
-      if (!patch.length) return null;
-      return patch;
-    },
-    apply(target, patch) {
-      if (!patch) return target;
-      return rfc6902.applyPatch(target, patch);
-    },
+  'json-patch': <Patcher<ReturnType<typeof rfc6902.create>>>{
+    create: rfc6902.create,
+    apply: rfc6902.apply,
+  },
+  'mini-json-patch': <Patcher<ReturnType<typeof mini_rfc6902.create>>>{
+    create: mini_rfc6902.create,
+    apply: mini_rfc6902.apply,
   },
 } satisfies Record<string, Patcher>;
 

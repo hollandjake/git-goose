@@ -1,6 +1,6 @@
 import { Model, Schema } from 'mongoose';
 import { beforeEach, describe, expect, test } from 'vitest';
-import { CommittableModel } from '../lib/types';
+import { CommittableModel } from '../src';
 import { getModel } from './utils';
 import './withFreshDB';
 
@@ -31,7 +31,7 @@ describe('#21', () => {
         },
         { suppressReservedKeysWarning: true }
       ),
-      { patcher: 'json-patch' },
+      { patcher: 'mini-json-patch' },
       ctx.connection
     );
     const globalGit = Model.$git();

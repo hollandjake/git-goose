@@ -3,7 +3,7 @@
   "version": "0.4.1",
   "description": "a mongoose plugin that enables git like change tracking",
   "license": "MIT",
-  "author": "Jake Holland <contact@hollandjake.com>",
+  "author": "Jake Holland",
   "homepage": "https://github.com/hollandjake/git-goose",
   "repository": {
     "type": "git",
@@ -14,20 +14,14 @@
   },
   "type": "module",
   "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
+  "module": "./dist/index.js",
   "files": [
     "dist",
     "index.ts",
     "lib"
   ],
-  "directories": {
-    "dist": "./dist",
-    "lib": "./src",
-    "src": "./src",
-    "test": "./tests"
-  },
   "scripts": {
-    "build": "rollup -c",
+    "build": "vite build",
     "clean": "gts clean",
     "clean:build": "pnpm clean && pnpm build",
     "lint": "gts lint",
@@ -37,22 +31,20 @@
   },
   "types": "./dist/index.d.ts",
   "dependencies": {
-    "mongoose": ">=8.0.0",
-    "rfc6902": "^5.1.1"
+    "mini-rfc6902": "^0.2.0",
+    "mongoose": ">=8.0.0"
   },
   "devDependencies": {
-    "@mnrendra/rollup-plugin-mixexport": "^1.1.0",
-    "@rollup/plugin-node-resolve": "^15.2.3",
-    "@rollup/plugin-typescript": "^11.1.6",
+    "@mnrendra/rollup-plugin-mixexport": "^1.2.0",
     "@types/node": "^22.3.0",
     "@vitest/coverage-istanbul": "^2.0.5",
-    "eslint": "^8.57.0",
     "gts": "^5.3.1",
     "mongodb-memory-server": "^10.0.0",
     "prettier-plugin-organize-imports": "^4.0.0",
-    "rollup": "^4.20.0",
     "rollup-plugin-esbuild": "^6.1.1",
     "typescript": "^5.5.4",
+    "vite": "^5.4.3",
+    "vite-plugin-dts": "^4.1.0",
     "vite-tsconfig-paths": "^5.0.1",
     "vitest": "^2.0.5"
   },

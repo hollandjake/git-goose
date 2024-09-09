@@ -1,9 +1,9 @@
 import mongoose, { Schema } from 'mongoose';
 import { beforeEach, describe, test } from 'vitest';
-import { GitError } from '../lib/errors';
-import { committable, git } from '../lib/plugin';
-import { exampleSchema, ExampleSchemaType, getModel, SchemaToCommittableModel } from './utils';
-import './withDB';
+import { exampleSchema, ExampleSchemaType, getModel, SchemaToCommittableModel } from '../tests/utils';
+import '../tests/withDB';
+import { GitError } from './errors';
+import { committable, git } from './plugin';
 
 declare module 'vitest' {
   export interface TestContext {
@@ -12,7 +12,7 @@ declare module 'vitest' {
 }
 
 beforeEach(ctx => {
-  const Model = getModel({ patcher: 'json-patch' });
+  const Model = getModel({ patcher: 'mini-json-patch' });
   const globalGit = Model.$git();
 
   ctx.Model = Model;
@@ -116,8 +116,8 @@ describe.concurrent('Model', () => {
       const bLog = await b.$git.log();
       expect(bLog).toHaveLength(1);
       expect(bLog[0].patch).toMatchObject({
-        type: 'json-patch',
-        ops: [{ op: 'replace', path: '', value: { _id: b._id, some_field: 'new_val' } }],
+        type: 'mini-json-patch',
+        ops: [['~', '', { _id: b._id, some_field: 'new_val' }]],
       });
     });
   });
@@ -148,8 +148,8 @@ describe.concurrent('Model', () => {
       const bLog = await b.$git.log();
       expect(bLog).toHaveLength(1);
       expect(bLog[0].patch).toMatchObject({
-        type: 'json-patch',
-        ops: [{ op: 'replace', path: '', value: { _id: b._id, some_field: 'new_val' } }],
+        type: 'mini-json-patch',
+        ops: [['~', '', { _id: b._id, some_field: 'new_val' }]],
       });
     });
   });
@@ -218,8 +218,8 @@ describe.concurrent('Model', () => {
       const bLog = await b.$git.log();
       expect(bLog).toHaveLength(1);
       expect(bLog[0].patch).toMatchObject({
-        type: 'json-patch',
-        ops: [{ op: 'replace', path: '', value: { _id: b._id, some_field: 'new_val' } }],
+        type: 'mini-json-patch',
+        ops: [['~', '', { _id: b._id, some_field: 'new_val' }]],
       });
     });
     test('upsert without new', async ({ expect, Model }) => {
@@ -282,17 +282,10 @@ describe.concurrent('Model', () => {
       const aLog = await a.$git.log();
       expect(aLog).toHaveLength(2);
       expect(aLog[0].patch).toMatchObject({
-        type: 'json-patch',
+        type: 'mini-json-patch',
         ops: [
-          {
-            op: 'remove',
-            path: '/some_other_field',
-          },
-          {
-            op: 'replace',
-            path: '/some_field',
-            value: 'new_val',
-          },
+          ['~', '/some_field', 'new_val'],
+          ['-', '/some_other_field'],
         ],
       });
 
@@ -317,8 +310,8 @@ describe.concurrent('Model', () => {
       const bLog = await b.$git.log();
       expect(bLog).toHaveLength(1);
       expect(bLog[0].patch).toMatchObject({
-        type: 'json-patch',
-        ops: [{ op: 'replace', path: '', value: { _id: b._id, some_field: 'new_val' } }],
+        type: 'mini-json-patch',
+        ops: [['~', '', { _id: b._id, some_field: 'new_val' }]],
       });
     });
     test('upsert without new', async ({ expect, Model }) => {

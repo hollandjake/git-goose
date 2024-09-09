@@ -1,9 +1,9 @@
 import mongoose, { Schema } from 'mongoose';
 import { afterAll, beforeEach, describe, test, vi } from 'vitest';
-import * as config from '../lib/config';
-import { GitError } from '../lib/errors';
-import { GitModel } from '../lib/model';
-import './withDB';
+import '../tests/withDB';
+import * as config from './config';
+import { GitError } from './errors';
+import { GitModel } from './model';
 
 declare module 'vitest' {
   export interface TestContext {
@@ -11,7 +11,7 @@ declare module 'vitest' {
   }
 }
 beforeEach(async ctx => {
-  const actualConfig = (await vi.importActual('../lib/config')) as typeof config;
+  const actualConfig = (await vi.importActual('./config')) as typeof config;
   ctx.GitGlobalConfig = actualConfig.GitGlobalConfig;
 });
 
@@ -21,7 +21,7 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock('../lib/config', async importOriginal => {
+vi.mock('./config', async importOriginal => {
   const mod = { ...((await importOriginal()) as object) };
   Object.defineProperty(mod, 'GitGlobalConfig', {
     get: mocks.GitGlobalConfig,
