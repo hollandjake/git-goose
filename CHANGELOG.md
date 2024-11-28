@@ -1,5 +1,12 @@
 # git-goose
 
+## [0.5.2](https://github.com/hollandjake/git-goose/compare/v0.5.1...v0.5.2) (2024-11-28)
+
+
+### Bug Fixes
+
+* removed _id from commit patches ([eb5f6fa](https://github.com/hollandjake/git-goose/commit/eb5f6fa6e4d9277f95a6f61b5ceb52d4b0144e18))
+
 ## [0.5.1](https://github.com/hollandjake/git-goose/compare/v0.5.0...v0.5.1) (2024-09-09)
 
 
