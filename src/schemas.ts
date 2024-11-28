@@ -13,6 +13,8 @@ const PatchSchema = new Schema<Patch>(
         return getPatcher(this.type).apply(target, this.ops);
       },
     },
+    versionKey: false,
+    _id: false,
   }
 );
 
