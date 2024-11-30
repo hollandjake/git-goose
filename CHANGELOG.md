@@ -1,5 +1,12 @@
 # git-goose
 
+## [0.5.3](https://github.com/hollandjake/git-goose/compare/v0.5.2...v0.5.3) (2024-11-30)
+
+
+### Bug Fixes
+
+* dependency bump ([a0a3224](https://github.com/hollandjake/git-goose/commit/a0a322415e87e6cb94de67f5a4145b0e9349d982))
+
 ## [0.5.2](https://github.com/hollandjake/git-goose/compare/v0.5.1...v0.5.2) (2024-11-28)
 
 
